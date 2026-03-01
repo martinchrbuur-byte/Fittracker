@@ -1,7 +1,14 @@
 (function(){
   const DIRECT_BASE = 'https://www.exercisedb.dev/api/v1';
   const APP_CONFIG = window.__APP_CONFIG || {};
-  const PROXY_BASE = (APP_CONFIG.EXERCISEDB_PROXY_BASE || '/functions/v1/exercisedb-proxy').replace(/\/$/, '');
+  const DEFAULT_PROXY_PATH = '/functions/v1/exercisedb-proxy';
+  const configuredProxyBase = APP_CONFIG.EXERCISEDB_PROXY_BASE || DEFAULT_PROXY_PATH;
+  const configuredSupabaseUrl = String(APP_CONFIG.SUPABASE_URL || '').replace(/\/$/, '');
+  const PROXY_BASE = String(configuredProxyBase).startsWith('http')
+    ? String(configuredProxyBase).replace(/\/$/, '')
+    : configuredSupabaseUrl
+      ? `${configuredSupabaseUrl}${String(configuredProxyBase).startsWith('/') ? '' : '/'}${configuredProxyBase}`.replace(/\/$/, '')
+      : String(configuredProxyBase).replace(/\/$/, '');
   const FORCE_PROXY = APP_CONFIG.EXERCISEDB_FORCE_PROXY === true;
 
   window.__catalogRouteMode = 'unknown';
@@ -139,26 +146,16 @@
   async function getMeta(){
     if(metaCache) return metaCache;
     try {
-      const payload = await proxyOrDirect('/meta', {});
+      const payload = await tryFetch(`${PROXY_BASE}/meta`);
+      window.__catalogRouteMode = 'proxy';
       metaCache = normalizeMetaPayload(payload);
-      if(metaCache.bodyParts.length || metaCache.muscles.length || metaCache.equipments.length){
-        return metaCache;
+      if(!metaCache.bodyParts.length && !metaCache.muscles.length && !metaCache.equipments.length){
+        throw new Error('Proxy meta response was empty');
       }
-
-      const [bodyPartsPayload, musclesPayload, equipmentsPayload] = await Promise.all([
-        tryFetch(`${DIRECT_BASE}/bodyparts`),
-        tryFetch(`${DIRECT_BASE}/muscles`),
-        tryFetch(`${DIRECT_BASE}/equipments`),
-      ]);
-
-      metaCache = {
-        bodyParts: normalizeMetaList(bodyPartsPayload?.data || bodyPartsPayload),
-        muscles: normalizeMetaList(musclesPayload?.data || musclesPayload),
-        equipments: normalizeMetaList(equipmentsPayload?.data || equipmentsPayload),
-      };
       return metaCache;
     } catch {
       try {
+        window.__catalogRouteMode = 'direct';
         const [bodyPartsPayload, musclesPayload, equipmentsPayload] = await Promise.all([
           tryFetch(`${DIRECT_BASE}/bodyparts`),
           tryFetch(`${DIRECT_BASE}/muscles`),
