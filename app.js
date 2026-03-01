@@ -40,9 +40,33 @@ function getWeekSummary(targetDateIso){let targetWeek=getIsoWeekKey(targetDateIs
 function getPreviousWeekKey(weekKey){let [yy,ww]=String(weekKey||'').split('-W');let year=parseInt(yy,10),week=parseInt(ww,10);if(!year||!week)return null;let d=new Date(Date.UTC(year,0,4));let day=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-day+3+(week-1)*7-7);let y=d.getUTCFullYear();let first=new Date(Date.UTC(y,0,4));let firstDay=(first.getUTCDay()+6)%7;first.setUTCDate(first.getUTCDate()-firstDay+3);let w=1+Math.round((d-first)/(7*864e5));return `${y}-W${String(w).padStart(2,'0')}`;}
 function getBlockKey(dateIso){let dates=listCompletedDates();if(!dates.length)return null;let anchorWeek=getIsoWeekKey(dates[0]);let [ay,aw]=anchorWeek.split('-W');let [cy,cw]=getIsoWeekKey(dateIso).split('-W');let anchor= parseInt(ay,10)*53+parseInt(aw,10);let current=parseInt(cy,10)*53+parseInt(cw,10);let offset=Math.max(0,current-anchor);let block=Math.floor(offset/4)+1;return `B${String(block).padStart(2,'0')}`;}
 function getBlockSummary(targetDateIso){let blockKey=getBlockKey(targetDateIso);if(!blockKey)return{blockKey:'B01',totalVolumeKg:0,totalSets:0,sessions:0,prCount:0};let sum={blockKey,totalVolumeKg:0,totalSets:0,sessions:0,prCount:0};Object.entries(s.cd||{}).forEach(([dateIso,day])=>{if(getBlockKey(dateIso)!==blockKey)return;sum.sessions++;(day.exerciseLogs||[]).forEach(log=>{sum.totalVolumeKg+=toNum(log.volumeKg)||0;sum.totalSets+=toNum(log.totalSets)||0;if(log.isPR_load||log.isPR_repsAtLoad||log.isPR_e1RM||log.isPR_volume)sum.prCount++;});});sum.totalVolumeKg=Math.round(sum.totalVolumeKg*100)/100;return sum;}
-function ensureStateShape(){if(!s||typeof s!=='object')s={};if(!s.w||typeof s.w!=='object')s.w={};if(!s.n||typeof s.n!=='object')s.n={};if(!s.cd||typeof s.cd!=='object')s.cd={};if(!s.wd||typeof s.wd!=='object')s.wd={};if(!s.t||typeof s.t!=='object')s.t={...T0};if(!s.a||typeof s.a!=='object')s.a={};if(!s.pg||typeof s.pg!=='object')s.pg={};if(!s.meta||typeof s.meta!=='object')s.meta={schemaVersion:SCHEMA_VERSION,statsLastComputedAt:null};if(!Array.isArray(s.split))s.split=D.slice();Object.keys(s.w).forEach(d=>{s.w[d]=normalizeWorkoutEntries(s.w[d]);});Object.keys(s.pg).forEach(k=>{s.pg[k]=normalizeProgressionGoal(s.pg[k],null);});Object.entries(s.wd).forEach(([dateIso,dayLog])=>{if(!dayLog||typeof dayLog!=='object')s.wd[dateIso]={dayName:nameFor(dateIso),exercises:{}};let dl=s.wd[dateIso];if(!dl.exercises||typeof dl.exercises!=='object')dl.exercises={};Object.keys(dl.exercises).forEach(k=>{dl.exercises[k]=normalizeExerciseProgress(dl.exercises[k],null);});aggregateDayLog(dateIso,dl.dayName||nameFor(dateIso));});Object.entries(s.cd).forEach(([dateIso,entry])=>{if(!entry||typeof entry!=='object'){delete s.cd[dateIso];return;}if(!Array.isArray(entry.exerciseLogs))entry.exerciseLogs=[];entry.exerciseLogs=entry.exerciseLogs.map((log,idx)=>{let exKey=log.exerciseKey||log.id||`legacy:${log.name||idx}`;let nlog=normalizeExerciseProgress(log,null);let top=nlog.topSet||{reps:nlog.reps||0,kilos:nlog.kilos||0};return{...log,id:exKey,exerciseKey:exKey,name:log.name||'Ukendt øvelse',done:!!log.done,reps:nlog.reps,kilos:nlog.kilos,topSet:top,sets:nlog.sets,volumeKg:nlog.volumeKg,totalReps:nlog.totalReps,totalSets:nlog.totalSets,estimated1RM:nlog.estimated1RM,isPR_load:!!log.isPR_load,isPR_repsAtLoad:!!log.isPR_repsAtLoad,isPR_e1RM:!!log.isPR_e1RM,isPR_volume:!!log.isPR_volume};});});
+function ensureStateShape(){
+if(!s||typeof s!=='object')s={};
+if(!s.w||typeof s.w!=='object')s.w={};
+if(!s.n||typeof s.n!=='object')s.n={};
+if(!s.cd||typeof s.cd!=='object')s.cd={};
+if(!s.wd||typeof s.wd!=='object')s.wd={};
+if(!s.t||typeof s.t!=='object')s.t={...T0};
+if(!s.a||typeof s.a!=='object')s.a={};
+if(!s.pg||typeof s.pg!=='object')s.pg={};
+if(!s.meta||typeof s.meta!=='object')s.meta={schemaVersion:SCHEMA_VERSION,statsLastComputedAt:null};
+if(!s.meta.ui||typeof s.meta.ui!=='object')s.meta.ui={};
+if(typeof s.meta.ui.activeTab!=='string')s.meta.ui.activeTab='today';
+if(!s.meta.ui.todayCollapsed||typeof s.meta.ui.todayCollapsed!=='object')s.meta.ui.todayCollapsed={};
+if(!s.meta.ui.planCollapsed||typeof s.meta.ui.planCollapsed!=='object')s.meta.ui.planCollapsed={};
+if(!Array.isArray(s.split))s.split=D.slice();
+Object.keys(s.w).forEach(d=>{s.w[d]=normalizeWorkoutEntries(s.w[d]);});
+Object.keys(s.pg).forEach(k=>{s.pg[k]=normalizeProgressionGoal(s.pg[k],null);});
+Object.entries(s.wd).forEach(([dateIso,dayLog])=>{if(!dayLog||typeof dayLog!=='object')s.wd[dateIso]={dayName:nameFor(dateIso),exercises:{}};let dl=s.wd[dateIso];if(!dl.exercises||typeof dl.exercises!=='object')dl.exercises={};Object.keys(dl.exercises).forEach(k=>{dl.exercises[k]=normalizeExerciseProgress(dl.exercises[k],null);});aggregateDayLog(dateIso,dl.dayName||nameFor(dateIso));});
+Object.entries(s.cd).forEach(([dateIso,entry])=>{if(!entry||typeof entry!=='object'){delete s.cd[dateIso];return;}if(!Array.isArray(entry.exerciseLogs))entry.exerciseLogs=[];entry.exerciseLogs=entry.exerciseLogs.map((log,idx)=>{let exKey=log.exerciseKey||log.id||`legacy:${log.name||idx}`;let nlog=normalizeExerciseProgress(log,null);let top=nlog.topSet||{reps:nlog.reps||0,kilos:nlog.kilos||0};return{...log,id:exKey,exerciseKey:exKey,name:log.name||'Ukendt øvelse',done:!!log.done,reps:nlog.reps,kilos:nlog.kilos,topSet:top,sets:nlog.sets,volumeKg:nlog.volumeKg,totalReps:nlog.totalReps,totalSets:nlog.totalSets,estimated1RM:nlog.estimated1RM,isPR_load:!!log.isPR_load,isPR_repsAtLoad:!!log.isPR_repsAtLoad,isPR_e1RM:!!log.isPR_e1RM,isPR_volume:!!log.isPR_volume};});});
 if((s.meta.schemaVersion||1)<SCHEMA_VERSION){s.meta.schemaVersion=SCHEMA_VERSION;}
-s.meta.statsLastComputedAt=new Date().toISOString();}
+s.meta.statsLastComputedAt=new Date().toISOString();
+}
+function setActiveTab(tab){ensureStateShape();s.meta.ui.activeTab=tab;save();}
+function getActiveTab(){ensureStateShape();return s.meta.ui.activeTab||'today';}
+function getTodayCollapseKey(dayName,exerciseEntry,idx){return `${dayName}:${occKey(exerciseEntry,idx)}`;}
+function isTodayCollapsed(dayName,exerciseEntry,idx){ensureStateShape();let key=getTodayCollapseKey(dayName,exerciseEntry,idx);if(typeof s.meta.ui.todayCollapsed[key]==='boolean')return s.meta.ui.todayCollapsed[key];return true;}
+function setTodayCollapsed(dayName,exerciseEntry,idx,value){ensureStateShape();let key=getTodayCollapseKey(dayName,exerciseEntry,idx);s.meta.ui.todayCollapsed[key]=!!value;save();}
 /* Modal infrastructure */function openMod(id){let m=$(id);if(m)m.setAttribute('aria-hidden','false');}function closeMod(id){let m=$(id);if(m)m.setAttribute('aria-hidden','true');}function createMod(id,title,body,footer){let m=C('div','modal');m.id=id;m.setAttribute('aria-hidden','true');let bd=C('div','modal-backdrop');m.appendChild(bd);let mc=C('div','modal-content');mc.setAttribute('role','dialog');mc.setAttribute('aria-modal','true');if(title){let h=C('h3');h.textContent=title;mc.appendChild(h);}mc.appendChild(body);if(footer)mc.appendChild(footer);let cb=C('button','icon-btn');cb.textContent='✕';cb.title='Luk';cb.addEventListener('click',()=>closeMod(id));mc.appendChild(cb);m.appendChild(mc);bd.addEventListener('click',()=>closeMod(id));return m;}let cur_rename_day=null,cur_rename_idx=null;function openRenameModal(idx,oldName){cur_rename_idx=idx;cur_rename_day=oldName;let b=C('div');let inp=C('input');inp.type='text';inp.value=oldName;inp.placeholder='Nyt navn...';inp.autoFocus=true;inp.className='modal-input';b.appendChild(inp);let ft=C('div','modal-footer');let cb=C('button','secondary-btn');cb.textContent='Annullér';cb.addEventListener('click',()=>closeMod('rename-modal'));let sb=C('button','primary-btn');sb.textContent='Gem';sb.addEventListener('click',()=>{let n=inp.value.trim();if(!n){alert('Navn må ikke være tomt');return;}if(n===oldName){closeMod('rename-modal');return;}if(s.split.includes(n)){alert('Navn findes allerede');return;}rename(idx,n);closeMod('rename-modal');});inp.addEventListener('keydown',e=>{if(e.key==='Enter')sb.click();});ft.appendChild(cb);ft.appendChild(sb);b.appendChild(ft);let m=$('rename-modal');let mc=m.querySelector('.modal-content');mc.innerHTML='';let h=C('h3');h.textContent='Omdøb dag';mc.appendChild(h);mc.appendChild(b);let xb=C('button','icon-btn');xb.textContent='✕';xb.title='Luk';xb.addEventListener('click',()=>closeMod('rename-modal'));xb.style.position='absolute';xb.style.right='0.5rem';xb.style.top='0.5rem';mc.appendChild(xb);openMod('rename-modal');}let cur_tem_mode=null,cur_tem_name=null;function openTemplateModal(mode,name){cur_tem_mode=mode;cur_tem_name=name;let isEdit=mode==='edit';let curr=isEdit?s.t[name]||[]:[];let b=C('div');let nb=C('label');nb.textContent='Navn:';nb.className='modal-label';b.appendChild(nb);let ninp=C('input');ninp.type='text';ninp.value=isEdit?name:'';ninp.placeholder='Navn...';ninp.className='modal-input';b.appendChild(ninp);let eb=C('label');eb.textContent='Øvelser (komma-adskilt):';eb.className='modal-label';eb.style.marginTop='0.5rem';b.appendChild(eb);let einp=C('textarea');einp.value=curr.join(', ');einp.placeholder='Øvelse 1, Øvelse 2, ...';einp.className='modal-textarea';b.appendChild(einp);let ft=C('div','modal-footer');let cancelbtn=C('button','secondary-btn');cancelbtn.textContent='Annullér';cancelbtn.addEventListener('click',()=>closeMod('template-modal'));let savebtn=C('button','primary-btn');savebtn.textContent='Gem';savebtn.addEventListener('click',()=>{let nn=ninp.value.trim();let ex=einp.value.split(',').map(st=>st.trim()).filter(Boolean);if(!nn){alert('Navn må ikke være tomt');return;}if(!ex.length){alert('Mindst en øvelse skal angives');return;}if(isEdit&&nn!==name&&s.t[nn]){alert('Navn eksisterer allerede');return;}if(isEdit&&nn!==name){delete s.t[name];for(let d in s.a)if(s.a[d]===name)s.a[d]=nn;}s.t[nn]=ex;save();rTem();rPlan();closeMod('template-modal');});ft.appendChild(cancelbtn);ft.appendChild(savebtn);b.appendChild(ft);let m=$('template-modal');let mc=m.querySelector('.modal-content');mc.innerHTML='';let h=C('h3');h.textContent=isEdit?'Rediger skabelon':'Ny skabelon';mc.appendChild(h);mc.appendChild(b);let xb=C('button','icon-btn');xb.textContent='✕';xb.title='Luk';xb.addEventListener('click',()=>closeMod('template-modal'));xb.style.position='absolute';xb.style.right='0.5rem';xb.style.top='0.5rem';mc.appendChild(xb);openMod('template-modal');}let cur_add_ex_day=null;function openAddExerciseModal(dayName){cur_add_ex_day=dayName;let b=C('div');let q=C('input','modal-input');q.type='text';q.placeholder='Søg øvelse...';q.autoFocus=true;b.appendChild(q);let fr=C('div','template-row');let bp=C('select');let mu=C('select');let eq=C('select');[bp,mu,eq].forEach(sel=>{let o=C('option');o.value='';o.textContent='Alle';sel.appendChild(o);});fr.append(bp,mu,eq);b.appendChild(fr);let rs=C('div');rs.style.maxHeight='280px';rs.style.overflow='auto';rs.style.marginTop='0.4rem';b.appendChild(rs);let manual=C('input','modal-input');manual.placeholder='Tilføj manuelt (valgfrit)';manual.style.marginTop='0.5rem';b.appendChild(manual);let ft=C('div','modal-footer');let cancelbtn=C('button','secondary-btn');cancelbtn.textContent='Annullér';cancelbtn.addEventListener('click',()=>closeMod('add-ex-modal'));let addManualBtn=C('button','primary-btn');addManualBtn.textContent='Tilføj manuelt';addManualBtn.addEventListener('click',()=>{let v=(manual.value||q.value||'').trim();if(!v){alert('Øvelsesnavn må ikke være tomt');return;}add(dayName,{id:`legacy:${v}`,exerciseId:null,name:v,bodyParts:[],targetMuscles:[],equipments:[],gifUrl:null,source:'manual'});closeMod('add-ex-modal');rPlan();rToday();});ft.append(cancelbtn,addManualBtn);b.appendChild(ft);let m=$('add-ex-modal');let mc=m.querySelector('.modal-content');mc.innerHTML='';let h=C('h3');h.textContent='Tilføj øvelse fra katalog';mc.append(h,b);let xb=C('button','icon-btn');xb.textContent='✕';xb.title='Luk';xb.addEventListener('click',()=>closeMod('add-ex-modal'));xb.style.position='absolute';xb.style.right='0.5rem';xb.style.top='0.5rem';mc.appendChild(xb);async function fillMeta(){if(typeof exerciseCatalogMeta!=='function')return;let meta=await exerciseCatalogMeta();[['bodyParts',bp,'Alle bodyparts'],['muscles',mu,'Alle muskler'],['equipments',eq,'Alt udstyr']].forEach(([k,sel,label])=>{let first=sel.querySelector('option');if(first)first.textContent=label;(meta[k]||[]).forEach(x=>{let o=C('option');o.value=x.name;o.textContent=x.name;sel.appendChild(o);});});}async function searchAndRender(){if(typeof exerciseCatalogSearch!=='function'){rs.textContent='Katalog er ikke tilgængeligt';return;}rs.innerHTML='';let res=await exerciseCatalogSearch({search:q.value.trim(),bodyPart:bp.value,muscle:mu.value,equipment:eq.value,limit:25,offset:0});if(!res.data.length){let empty=C('div','card-subtitle');empty.textContent='Ingen øvelser fundet';rs.appendChild(empty);return;}res.data.forEach(ex=>{let row=C('div','exercise-item');let nm=C('span','exercise-name');nm.textContent=ex.name;let addBtn=C('button','primary-btn');addBtn.textContent='Tilføj';addBtn.style.padding='0.45rem 0.7rem';addBtn.addEventListener('click',()=>{add(dayName,ex);closeMod('add-ex-modal');rPlan();rToday();});row.append(nm,addBtn);rs.appendChild(row);});}q.addEventListener('input',()=>{searchAndRender();});bp.addEventListener('change',()=>{searchAndRender();});mu.addEventListener('change',()=>{searchAndRender();});eq.addEventListener('change',()=>{searchAndRender();});fillMeta().then(()=>searchAndRender());openMod('add-ex-modal');}function showConfirm(title,message,onConfirm,onCancel){let b=C('div');let msg=C('p');msg.textContent=message;msg.className='modal-message';b.appendChild(msg);let ft=C('div','modal-footer');let cancelbtn=C('button','secondary-btn');cancelbtn.textContent='Annullér';cancelbtn.addEventListener('click',()=>{closeMod('confirm-modal');if(onCancel)onCancel();});let confirmbtn=C('button','danger-btn');confirmbtn.textContent='Slet';confirmbtn.addEventListener('click',()=>{closeMod('confirm-modal');onConfirm();});ft.appendChild(cancelbtn);ft.appendChild(confirmbtn);b.appendChild(ft);let m=$('confirm-modal');let mc=m.querySelector('.modal-content');mc.innerHTML='';let h=C('h3');h.textContent=title;mc.appendChild(h);mc.appendChild(b);let xb=C('button','icon-btn');xb.textContent='✕';xb.title='Luk';xb.addEventListener('click',()=>closeMod('confirm-modal'));xb.style.position='absolute';xb.style.right='0.5rem';xb.style.top='0.5rem';mc.appendChild(xb);openMod('confirm-modal');}
 function load(stateObj){try{let f,r=localStorage;
  if(stateObj){s=stateObj;ensureStateShape();save();return;}
@@ -74,24 +98,257 @@ function latestCompletedDate(){let ks=Object.keys(s.cd||{}).filter(k=>s.cd[k]&&t
 function getDayLog(dateIso,dayName){if(!s.wd||typeof s.wd!="object")s.wd={};if(!s.wd[dateIso]||typeof s.wd[dateIso]!="object")s.wd[dateIso]={dayName:dayName,exercises:{}};if(dayName&&s.wd[dateIso].dayName!==dayName)s.wd[dateIso].dayName=dayName;if(!s.wd[dateIso].exercises||typeof s.wd[dateIso].exercises!="object")s.wd[dateIso].exercises={};return s.wd[dateIso];}
 function getExerciseProgress(dateIso,dayName,exerciseOccurrenceKey,exerciseEntry){let dl=getDayLog(dateIso,dayName);if(!dl.exercises[exerciseOccurrenceKey]||typeof dl.exercises[exerciseOccurrenceKey]!="object")dl.exercises[exerciseOccurrenceKey]=normalizeExerciseProgress({done:false,reps:0,kilos:0,sets:[{reps:0,kilos:0,isWarmup:false}]},exerciseEntry);else dl.exercises[exerciseOccurrenceKey]=normalizeExerciseProgress(dl.exercises[exerciseOccurrenceKey],exerciseEntry);return dl.exercises[exerciseOccurrenceKey];}
 function setExerciseProgress(dateIso,dayName,exerciseOccurrenceKey,exerciseEntry,patch){let p=getExerciseProgress(dateIso,dayName,exerciseOccurrenceKey,exerciseEntry);let dayLog=getDayLog(dateIso,dayName);dayLog.exercises[exerciseOccurrenceKey]=normalizeExerciseProgress({...p,...patch},exerciseEntry);aggregateDayLog(dateIso,dayName);save();}
-function rToday(){let t=iso(new Date()),nm=nameFor(t),todayComp=s.cd&&s.cd[t]?s.cd[t]:null,lastComp=s.last||latestCompletedDate(),dayLog=getDayLog(t,nm);$("today-day-name").textContent=nm;let statusEl=$("today-completion-status"),lastEl=$("today-last-planned"),btn=$("mark-today");let todayExercises=(s.w[nm]||[]).map(exRef);let doneCount=todayExercises.reduce((a,entry,idx)=>a+(getExerciseProgress(t,nm,occKey(entry,idx),entry).done?1:0),0);if(statusEl){if(todayComp){let at=todayComp.completedAt?new Date(todayComp.completedAt):new Date();let tm=isNaN(at.getTime())?"":` (${at.toLocaleTimeString("da-DK",{hour:"2-digit",minute:"2-digit"})})`;let prCount=(todayComp.exerciseLogs||[]).reduce((a,log)=>a+((log.isPR_load||log.isPR_repsAtLoad||log.isPR_e1RM||log.isPR_volume)?1:0),0);statusEl.textContent=`✅ Gennemført i dag${tm}${prCount?` · ${prCount} PR`:''}`;statusEl.style.color="#16a34a";}else{statusEl.textContent=`Progress: ${doneCount}/${todayExercises.length||0} øvelser markeret`;statusEl.style.color="#6b7280";}}if(lastEl){lastEl.textContent=lastComp?`Sidst gennemført: ${new Date(lastComp).toLocaleDateString("da-DK")}`:"Ingen træning er markeret som gennemført endnu";}if(btn){let isDone=!!todayComp;btn.classList.toggle("marked",isDone);btn.textContent=isDone?"Fortryd: Markér ikke gennemført":"Markér dagens pas som gennemført";btn.setAttribute("aria-pressed",isDone?"true":"false");}let l=$("today-exercise-list");l.innerHTML="";if(todayExercises.length){todayExercises.forEach((entry,idx)=>{let exerciseKey=exId(entry),entryKey=occKey(entry,idx),name=exName(entry),p=getExerciseProgress(t,nm,entryKey,entry),last=getLastComparableSession(exerciseKey,t),goal=getProgressionGoal(entry),target=getNextTarget(entry,t),li=C("li","exercise-item exercise-progress-item");if(p.done)li.classList.add("done");li.style.flexDirection='column';li.style.alignItems='stretch';let rowTop=C('div');rowTop.style.display='flex';rowTop.style.alignItems='center';rowTop.style.justifyContent='space-between';rowTop.style.gap='0.5rem';let left=C("div","exercise-progress-left");let chk=C("input","exercise-done-checkbox");chk.type='checkbox';chk.checked=!!p.done;chk.setAttribute('aria-label',`Marker ${name} som gennemført`);let sp=C("span","exercise-name");sp.textContent=name;left.append(chk,sp);let mini=C('div','card-subtitle');mini.style.margin='0';mini.textContent=`${p.totalSets||0} sæt · ${p.totalReps||0} reps · ${p.volumeKg||0} kg vol · e1RM ${p.estimated1RM||0}`;rowTop.append(left,mini);li.appendChild(rowTop);
+function rToday(){
+let t=iso(new Date()),nm=nameFor(t),todayComp=s.cd&&s.cd[t]?s.cd[t]:null,lastComp=s.last||latestCompletedDate();
+$("today-day-name").textContent=nm;
+let statusEl=$("today-completion-status"),lastEl=$("today-last-planned"),btn=$("mark-today");
+let todayExercises=(s.w[nm]||[]).map(exRef);
+let doneCount=todayExercises.reduce((a,entry,idx)=>a+(getExerciseProgress(t,nm,occKey(entry,idx),entry).done?1:0),0);
+if(statusEl){
+if(todayComp){
+let at=todayComp.completedAt?new Date(todayComp.completedAt):new Date();
+let tm=isNaN(at.getTime())?"":` (${at.toLocaleTimeString("da-DK",{hour:"2-digit",minute:"2-digit"})})`;
+let prCount=(todayComp.exerciseLogs||[]).reduce((a,log)=>a+((log.isPR_load||log.isPR_repsAtLoad||log.isPR_e1RM||log.isPR_volume)?1:0),0);
+statusEl.textContent=`✅ Gennemført i dag${tm}${prCount?` · ${prCount} PR`:''}`;
+statusEl.style.color="#16a34a";
+}else{
+statusEl.textContent=`Progress: ${doneCount}/${todayExercises.length||0} øvelser markeret`;
+statusEl.style.color="#6b7280";
+}
+}
+if(lastEl){lastEl.textContent=lastComp?`Sidst gennemført: ${new Date(lastComp).toLocaleDateString("da-DK")}`:"Ingen træning er markeret som gennemført endnu";}
+if(btn){
+let isDone=!!todayComp;
+btn.classList.toggle("marked",isDone);
+btn.textContent=isDone?"Fortryd: Markér ikke gennemført":"Markér dagens pas som gennemført";
+btn.setAttribute("aria-pressed",isDone?"true":"false");
+}
+let l=$("today-exercise-list");
+l.innerHTML="";
+if(!todayExercises.length){let li=C("li","exercise-item");li.textContent="Ingen øvelser planlagt endnu.";l.appendChild(li);return;}
+todayExercises.forEach((entry,idx)=>{
+let exerciseKey=exId(entry),entryKey=occKey(entry,idx),name=exName(entry),p=getExerciseProgress(t,nm,entryKey,entry),last=getLastComparableSession(exerciseKey,t),goal=getProgressionGoal(entry),target=getNextTarget(entry,t);
+let li=C("li","exercise-item exercise-progress-item");
+if(p.done)li.classList.add("done");
+let head=C('div','exercise-top-row');
+let left=C("div","exercise-progress-left");
+let chk=C("input","exercise-done-checkbox");
+chk.type='checkbox';
+chk.checked=!!p.done;
+chk.setAttribute('aria-label',`Marker ${name} som gennemført`);
+let sp=C("span","exercise-name");
+sp.textContent=name;
+left.append(chk,sp);
+let mini=C('div','card-subtitle exercise-mini-metrics');
+mini.textContent=`${p.totalSets||0} sæt · ${p.totalReps||0} reps · ${p.volumeKg||0} kg vol · e1RM ${p.estimated1RM||0}`;
+let toggle=C('button','icon-btn exercise-expand-btn');
+let collapsed=isTodayCollapsed(nm,entry,idx);
+toggle.textContent=collapsed?'▼':'▲';
+toggle.title=collapsed?'Vis detaljer':'Skjul detaljer';
+toggle.addEventListener('click',()=>{
+collapsed=!collapsed;
+setTodayCollapsed(nm,entry,idx,collapsed);
+details.hidden=collapsed;
+toggle.textContent=collapsed?'▼':'▲';
+toggle.title=collapsed?'Vis detaljer':'Skjul detaljer';
+});
+head.append(left,mini,toggle);
+li.appendChild(head);
 
-let chips=C('div');chips.style.display='flex';chips.style.flexWrap='wrap';chips.style.gap='0.35rem';chips.style.margin='0.35rem 0';let lastChip=C('span','card-subtitle');lastChip.style.margin='0';lastChip.style.padding='0.2rem 0.45rem';lastChip.style.border='1px solid #e5e7eb';lastChip.style.borderRadius='999px';lastChip.textContent=last?`Sidst: ${(last.log.topSet&&last.log.topSet.kilos)||last.log.kilos||0}kg × ${(last.log.topSet&&last.log.topSet.reps)||last.log.reps||0} (${last.dateIso})`:'Sidst: ingen data';let targetChip=C('span','card-subtitle');targetChip.style.margin='0';targetChip.style.padding='0.2rem 0.45rem';targetChip.style.border='1px solid #e5e7eb';targetChip.style.borderRadius='999px';targetChip.textContent=target.label;chips.append(lastChip,targetChip);if(target.last){let lastTargetChip=C('span','card-subtitle');lastTargetChip.style.margin='0';lastTargetChip.style.padding='0.2rem 0.45rem';lastTargetChip.style.border='1px solid #e5e7eb';lastTargetChip.style.borderRadius='999px';lastTargetChip.textContent=target.last;chips.append(lastTargetChip);}li.appendChild(chips);
+let chips=C('div','info-chips');
+let lastChip=C('span','card-subtitle info-chip');
+lastChip.textContent=last?`Sidst: ${(last.log.topSet&&last.log.topSet.kilos)||last.log.kilos||0}kg × ${(last.log.topSet&&last.log.topSet.reps)||last.log.reps||0} (${last.dateIso})`:'Sidst: ingen data';
+let targetChip=C('span','card-subtitle info-chip info-chip-target');
+targetChip.textContent=target.label;
+chips.append(lastChip,targetChip);
+if(target.last){let lastTargetChip=C('span','card-subtitle info-chip');lastTargetChip.textContent=target.last;chips.append(lastTargetChip);}
+li.appendChild(chips);
 
-let setsWrap=C('div');setsWrap.style.display='flex';setsWrap.style.flexDirection='column';setsWrap.style.gap='0.35rem';let renderSetRows=()=>{setsWrap.innerHTML='';let stateP=getExerciseProgress(t,nm,entryKey,entry);(stateP.sets||[]).forEach((st,setIdx)=>{let setRow=C('div','exercise-progress-controls');setRow.style.justifyContent='flex-start';setRow.style.flexWrap='wrap';let lbl=C('span','card-subtitle');lbl.style.margin='0';lbl.textContent=`Sæt ${setIdx+1}`;let reps=C('input','exercise-progress-input');reps.type='number';reps.min='0';reps.step='1';reps.placeholder='Reps';reps.value=st.reps??0;let kilos=C('input','exercise-progress-input');kilos.type='number';kilos.min='0';kilos.step='0.5';kilos.placeholder='Kg';kilos.value=st.kilos??0;let warmLbl=C('label','card-subtitle');warmLbl.style.margin='0';warmLbl.style.display='flex';warmLbl.style.alignItems='center';warmLbl.style.gap='0.25rem';let warm=C('input');warm.type='checkbox';warm.checked=!!st.isWarmup;warmLbl.append(warm,document.createTextNode('Warmup'));let dupBtn=C('button','secondary-btn');dupBtn.type='button';dupBtn.style.padding='0.35rem 0.45rem';dupBtn.textContent='Dupl';let delBtn=C('button','danger-btn');delBtn.type='button';delBtn.style.padding='0.35rem 0.45rem';delBtn.textContent='✕';let commitSet=(patch)=>{let current=getExerciseProgress(t,nm,entryKey,entry);let sets=(current.sets||[]).map((x,i)=>i===setIdx?{...x,...patch}:x);setExerciseProgress(t,nm,entryKey,entry,{sets});mini.textContent=`${getExerciseProgress(t,nm,entryKey,entry).totalSets||0} sæt · ${getExerciseProgress(t,nm,entryKey,entry).totalReps||0} reps · ${getExerciseProgress(t,nm,entryKey,entry).volumeKg||0} kg vol · e1RM ${getExerciseProgress(t,nm,entryKey,entry).estimated1RM||0}`;};reps.addEventListener('change',()=>{let v=Math.max(0,Math.round(toNum(reps.value)||0));commitSet({reps:v});});kilos.addEventListener('change',()=>{let v=Math.max(0,Math.round((toNum(kilos.value)||0)*2)/2);commitSet({kilos:v});});warm.addEventListener('change',()=>{commitSet({isWarmup:warm.checked});});dupBtn.addEventListener('click',()=>{let current=getExerciseProgress(t,nm,entryKey,entry);let source=current.sets[setIdx]||{reps:0,kilos:0,isWarmup:false};let sets=[...(current.sets||[]),sanitizeSetEntry(source,(current.sets||[]).length)];setExerciseProgress(t,nm,entryKey,entry,{sets});renderSetRows();});delBtn.addEventListener('click',()=>{let current=getExerciseProgress(t,nm,entryKey,entry);if((current.sets||[]).length<=1)return;let sets=(current.sets||[]).filter((_,i)=>i!==setIdx).map((x,i)=>sanitizeSetEntry(x,i));setExerciseProgress(t,nm,entryKey,entry,{sets});renderSetRows();});setRow.append(lbl,reps,kilos,warmLbl,dupBtn,delBtn);setsWrap.appendChild(setRow);});let goalRow=C('div','card-subtitle');goalRow.style.margin='0';goalRow.textContent=`Målzone: ${goal.repRangeMin}-${goal.repRangeMax} reps · +${goal.incrementKg} kg · metric: ${goal.primaryMetric}`;setsWrap.appendChild(goalRow);};
+let details=C('div','exercise-details');
+details.hidden=collapsed;
+let setsWrap=C('div','exercise-sets-wrap');
+let refreshMini=()=>{let pp=getExerciseProgress(t,nm,entryKey,entry);mini.textContent=`${pp.totalSets||0} sæt · ${pp.totalReps||0} reps · ${pp.volumeKg||0} kg vol · e1RM ${pp.estimated1RM||0}`;};
+let renderSetRows=()=>{
+setsWrap.innerHTML='';
+let stateP=getExerciseProgress(t,nm,entryKey,entry);
+(stateP.sets||[]).forEach((st,setIdx)=>{
+let setRow=C('div','exercise-progress-controls');
+let lbl=C('span','card-subtitle');
+lbl.textContent=`Sæt ${setIdx+1}`;
+let repsWrap=C('div','stepper-group');
+let repsMinus=C('button','secondary-btn stepper-btn');repsMinus.type='button';repsMinus.textContent='−';
+let reps=C('input','exercise-progress-input');reps.type='number';reps.min='0';reps.step='1';reps.placeholder='Reps';reps.value=st.reps??0;
+let repsPlus=C('button','secondary-btn stepper-btn');repsPlus.type='button';repsPlus.textContent='+';
+repsWrap.append(repsMinus,reps,repsPlus);
+let kgWrap=C('div','stepper-group');
+let kgMinus=C('button','secondary-btn stepper-btn');kgMinus.type='button';kgMinus.textContent='−';
+let kilos=C('input','exercise-progress-input');kilos.type='number';kilos.min='0';kilos.step='0.5';kilos.placeholder='Kg';kilos.value=st.kilos??0;
+let kgPlus=C('button','secondary-btn stepper-btn');kgPlus.type='button';kgPlus.textContent='+';
+kgWrap.append(kgMinus,kilos,kgPlus);
+let warmLbl=C('label','card-subtitle warmup-label');
+let warm=C('input');warm.type='checkbox';warm.checked=!!st.isWarmup;warmLbl.append(warm,document.createTextNode('Warmup'));
+let dupBtn=C('button','secondary-btn compact-btn');dupBtn.type='button';dupBtn.textContent='Dupl';
+let delBtn=C('button','danger-btn compact-btn');delBtn.type='button';delBtn.textContent='✕';
+let commitSet=(patch)=>{let current=getExerciseProgress(t,nm,entryKey,entry);let sets=(current.sets||[]).map((x,i)=>i===setIdx?{...x,...patch}:x);setExerciseProgress(t,nm,entryKey,entry,{sets});refreshMini();};
+let setReps=(val)=>{let v=Math.max(0,Math.round(val));reps.value=v;commitSet({reps:v});};
+let setKg=(val)=>{let v=Math.max(0,Math.round(val*2)/2);kilos.value=v;commitSet({kilos:v});};
+reps.addEventListener('change',()=>setReps(toNum(reps.value)||0));
+kilos.addEventListener('change',()=>setKg(toNum(kilos.value)||0));
+repsMinus.addEventListener('click',()=>setReps((toNum(reps.value)||0)-1));
+repsPlus.addEventListener('click',()=>setReps((toNum(reps.value)||0)+1));
+kgMinus.addEventListener('click',()=>setKg((toNum(kilos.value)||0)-0.5));
+kgPlus.addEventListener('click',()=>setKg((toNum(kilos.value)||0)+0.5));
+warm.addEventListener('change',()=>commitSet({isWarmup:warm.checked}));
+dupBtn.addEventListener('click',()=>{let current=getExerciseProgress(t,nm,entryKey,entry);let source=current.sets[setIdx]||{reps:0,kilos:0,isWarmup:false};let sets=[...(current.sets||[]),sanitizeSetEntry(source,(current.sets||[]).length)];setExerciseProgress(t,nm,entryKey,entry,{sets});renderSetRows();refreshMini();});
+delBtn.addEventListener('click',()=>{let current=getExerciseProgress(t,nm,entryKey,entry);if((current.sets||[]).length<=1)return;let sets=(current.sets||[]).filter((_,i)=>i!==setIdx).map((x,i)=>sanitizeSetEntry(x,i));setExerciseProgress(t,nm,entryKey,entry,{sets});renderSetRows();refreshMini();});
+setRow.append(lbl,repsWrap,kgWrap,warmLbl,dupBtn,delBtn);
+setsWrap.appendChild(setRow);
+});
+let goalRow=C('div','card-subtitle');
+goalRow.textContent=`Målzone: ${goal.repRangeMin}-${goal.repRangeMax} reps · +${goal.incrementKg} kg · metric: ${goal.primaryMetric}`;
+setsWrap.appendChild(goalRow);
+};
 renderSetRows();
-let bottom=C('div');bottom.style.display='flex';bottom.style.justifyContent='space-between';bottom.style.alignItems='center';bottom.style.gap='0.5rem';let addSetBtn=C('button','primary-btn');addSetBtn.type='button';addSetBtn.style.padding='0.45rem 0.65rem';addSetBtn.textContent='➕ Sæt';addSetBtn.addEventListener('click',()=>{let current=getExerciseProgress(t,nm,entryKey,entry);let sets=[...(current.sets||[]),sanitizeSetEntry({reps:0,kilos:0,isWarmup:false},(current.sets||[]).length)];setExerciseProgress(t,nm,entryKey,entry,{sets});renderSetRows();});let note=C('input','exercise-progress-input');note.style.width='100%';note.placeholder='Øvelsesnote (valgfri)';note.value=p.exerciseNotes||'';note.addEventListener('change',()=>{setExerciseProgress(t,nm,entryKey,entry,{exerciseNotes:note.value||''});});let painLbl=C('label','card-subtitle');painLbl.style.margin='0';painLbl.style.display='flex';painLbl.style.alignItems='center';painLbl.style.gap='0.25rem';let pain=C('input');pain.type='checkbox';pain.checked=!!p.painFlag;pain.addEventListener('change',()=>{setExerciseProgress(t,nm,entryKey,entry,{painFlag:pain.checked});});painLbl.append(pain,document.createTextNode('Smerte-flag'));chk.addEventListener('change',()=>{setExerciseProgress(t,nm,entryKey,entry,{done:chk.checked});li.classList.toggle('done',chk.checked);let dc=todayExercises.reduce((a,x,i)=>a+(getExerciseProgress(t,nm,occKey(x,i),x).done?1:0),0);if(statusEl&&!todayComp)statusEl.textContent=`Progress: ${dc}/${todayExercises.length||0} øvelser markeret`;});
-bottom.append(addSetBtn,painLbl);li.append(setsWrap,note,bottom);l.appendChild(li);});}else{let li=C("li","exercise-item");li.textContent="Ingen øvelser planlagt endnu.";l.appendChild(li);} }
-function rPlan(){let p=$("plan-accordion");p.innerHTML="";rTem();s.split.forEach((d,i)=>{let c=C("div","card");let h=C("div","card-header"),t=C("div","card-title");let sn=C("span");sn.textContent=d;t.appendChild(sn);let ap=s.a[d];if(ap&&s.t[ap]){let lb=C("span","template-label");lb.textContent=` [${ap}]`;t.appendChild(lb);}let rb=C("button","icon-btn rename-btn");rb.title="Omdøb dag";rb.textContent="✎";rb.addEventListener("click",e=>{e.stopPropagation();openRenameModal(i,d);});t.appendChild(rb);h.appendChild(t);let act=C("div","card-actions");let ml=C("button","icon-btn");ml.textContent="◀";ml.title="Flyt tilbage";ml.addEventListener("click",e=>{e.stopPropagation();mv(i,-1);});let mr=C("button","icon-btn");mr.textContent="▶";mr.title="Flyt frem";mr.addEventListener("click",e=>{e.stopPropagation();mv(i,1);});let tog=C("button","icon-btn");tog.textContent="▼";act.append(ml,mr,tog);h.appendChild(act);c.appendChild(h);let b=C("div","card-body");let sub=C("div","card-subtitle");sub.textContent="Træk for at omarrangere øvelser. Tryk ✕ for at slette.";b.appendChild(sub);let tr=C("div","template-row");let lab=C("label");lab.textContent="Skabelon: ";lab.htmlFor=`templ-${i}`;tr.appendChild(lab);let sel=C("select");sel.id=`templ-${i}`;let none=C("option");none.value="";none.textContent="Ingen";sel.appendChild(none);Object.keys(s.t).forEach(tn=>{let o=C("option");o.value=tn;o.textContent=tn;sel.appendChild(o);});sel.value=s.a[d]||"";sel.addEventListener("change",()=>{if(sel.value)applyT(d,sel.value);else{delete s.a[d];save();rPlan();rToday();}});tr.appendChild(sel);b.appendChild(tr);let ul=C("ul","exercise-list");ul.dataset.dayName=d;let exs=s.w[d]||[];if(exs.length){exs.forEach((e,j)=>{let row=liMake(d,e,j);row.style.flexDirection='column';row.style.alignItems='stretch';let ex=exRef(e);let goal=getProgressionGoal(ex);let key=exId(ex);let hist=findExerciseHistory(key,null);let trendWrap=C('div','card-subtitle');trendWrap.style.margin='0.35rem 0 0';let outcomes=hist.slice(-4).map(x=>x.log).reduce((acc,log,idx,arr)=>{if(idx===0)return acc;let prev=arr[idx-1];let st=metricsDeltaStatus(getExerciseLogMetric(log,goal.primaryMetric),getExerciseLogMetric(prev,goal.primaryMetric),0.1);acc.push(st==='up'?'↑':(st==='down'?'↓':'→'));return acc;},[]).slice(-3);trendWrap.textContent=`Trend: ${outcomes.length?outcomes.join(' '):'ingen historik'}`;
-let goalRow=C('div');goalRow.className='template-row';goalRow.style.margin='0.35rem 0 0';let minInp=C('input','exercise-progress-input');minInp.type='number';minInp.min='1';minInp.step='1';minInp.value=goal.repRangeMin;let maxInp=C('input','exercise-progress-input');maxInp.type='number';maxInp.min='1';maxInp.step='1';maxInp.value=goal.repRangeMax;let incInp=C('input','exercise-progress-input');incInp.type='number';incInp.min='0.5';incInp.step='0.5';incInp.value=goal.incrementKg;let metricSel=C('select');['topSet','e1RM','volume'].forEach(v=>{let o=C('option');o.value=v;o.textContent=v;metricSel.appendChild(o);});metricSel.value=goal.primaryMetric;let commitGoal=()=>{s.pg[key]=normalizeProgressionGoal({repRangeMin:parseInt(minInp.value,10),repRangeMax:parseInt(maxInp.value,10),incrementKg:parseFloat(incInp.value),primaryMetric:metricSel.value},ex);save();trendWrap.textContent=`Trend: ${outcomes.length?outcomes.join(' '):'ingen historik'}`;};[minInp,maxInp,incInp].forEach(inp=>inp.addEventListener('change',commitGoal));metricSel.addEventListener('change',commitGoal);goalRow.append(C('span','card-subtitle'),minInp,maxInp,incInp,metricSel);goalRow.firstChild.textContent='Mål';row.append(trendWrap,goalRow);ul.appendChild(row);});}else{let li=C("li","exercise-item");li.textContent="Ingen øvelser endnu.";ul.appendChild(li);}b.appendChild(ul);let ir=C("div","exercise-input-row");let ab=C("button","primary-btn");ab.textContent="➕ Tilføj øvelse";ab.addEventListener("click",()=>{openAddExerciseModal(d);});ir.appendChild(ab);b.appendChild(ir);let nl=C("div","card-subtitle");nl.textContent="Noter til dagen (valgfrit):";b.appendChild(nl);let ta=C("textarea","notes-textarea");ta.value=s.n[d]||"";ta.addEventListener("input",()=>{s.n[d]=ta.value;save();});b.appendChild(ta);c.appendChild(b);let col=false;h.addEventListener("click",()=>{col=!col;b.classList.toggle("collapsed",col);tog.textContent=col?"▲":"▼";});p.appendChild(c);});setupDnD();}
-function rTem(){let m=$("template-manager");if(!m)return;m.innerHTML="";let c=C("div","card"),h=C("h2");h.textContent="Skabeloner";c.appendChild(h);let ul=C("ul","template-list");Object.keys(s.t).forEach(tn=>{let li=C("li","template-item"),sp=C("span");sp.textContent=tn;li.appendChild(sp);let ed=C("button","icon-btn");ed.textContent="✎";ed.title="Rediger";ed.addEventListener("click",()=>{openTemplateModal('edit',tn);});li.appendChild(ed);let del=C("button","icon-btn");del.textContent="✕";del.title="Slet";del.addEventListener("click",()=>{showConfirm('Slet skabelon',`Slet '${tn}'?`,()=>{delete s.t[tn];for(let d in s.a)if(s.a[d]===tn)delete s.a[d];save();rTem();rPlan();});});li.appendChild(del);ul.appendChild(li);});c.appendChild(ul);let ab=C("button","primary-btn full-width");ab.textContent="Opret ny skabelon";ab.addEventListener("click",()=>{openTemplateModal('create',null);});c.appendChild(ab);m.appendChild(c);} 
-function liMake(d,n,j){let li=C("li","exercise-item");li.draggable=true;li.dataset.index=j;li.dataset.dayName=d;let nm=exName(n);let sp=C("span","exercise-name");sp.textContent=nm;let ac=C("div","exercise-actions");let dh=C("button","icon-btn");dh.textContent="↕";dh.title="Træk";let db=C("button","icon-btn");db.textContent="✕";db.title="Slet";db.addEventListener("click",()=>{showConfirm('Slet øvelse',`Slet '${nm}'?`,()=>{del(d,j);rPlan();rToday();});});ac.append(dh,db);li.append(sp,ac);return li;} 
+let note=C('input','exercise-progress-input exercise-note-input');
+note.placeholder='Øvelsesnote (valgfri)';
+note.value=p.exerciseNotes||'';
+note.addEventListener('change',()=>{setExerciseProgress(t,nm,entryKey,entry,{exerciseNotes:note.value||''});});
+let bottom=C('div','exercise-bottom-row');
+let addSetBtn=C('button','primary-btn compact-btn');
+addSetBtn.type='button';
+addSetBtn.textContent='➕ Sæt';
+addSetBtn.addEventListener('click',()=>{let current=getExerciseProgress(t,nm,entryKey,entry);let sets=[...(current.sets||[]),sanitizeSetEntry({reps:0,kilos:0,isWarmup:false},(current.sets||[]).length)];setExerciseProgress(t,nm,entryKey,entry,{sets});renderSetRows();refreshMini();});
+let painLbl=C('label','card-subtitle warmup-label');
+let pain=C('input');
+pain.type='checkbox';
+pain.checked=!!p.painFlag;
+pain.addEventListener('change',()=>{setExerciseProgress(t,nm,entryKey,entry,{painFlag:pain.checked});});
+painLbl.append(pain,document.createTextNode('Smerte-flag'));
+bottom.append(addSetBtn,painLbl);
+details.append(setsWrap,note,bottom);
+li.appendChild(details);
+chk.addEventListener('change',()=>{
+setExerciseProgress(t,nm,entryKey,entry,{done:chk.checked});
+li.classList.toggle('done',chk.checked);
+let dc=todayExercises.reduce((a,x,i)=>a+(getExerciseProgress(t,nm,occKey(x,i),x).done?1:0),0);
+if(statusEl&&!todayComp)statusEl.textContent=`Progress: ${dc}/${todayExercises.length||0} øvelser markeret`;
+});
+l.appendChild(li);
+});
+}
+function rPlan(){
+let p=$("plan-accordion");
+p.innerHTML="";
+rTem();
+s.split.forEach((d,i)=>{
+let c=C("div","card");
+let h=C("div","card-header"),t=C("div","card-title");
+let sn=C("span");
+sn.textContent=d;
+t.appendChild(sn);
+let ap=s.a[d];
+if(ap&&s.t[ap]){let lb=C("span","template-label");lb.textContent=` [${ap}]`;t.appendChild(lb);}
+let rb=C("button","icon-btn rename-btn");
+rb.title="Omdøb dag";
+rb.textContent="✎";
+rb.addEventListener("click",e=>{e.stopPropagation();openRenameModal(i,d);});
+t.appendChild(rb);
+h.appendChild(t);
+let act=C("div","card-actions");
+let ml=C("button","icon-btn");
+ml.textContent="◀";
+ml.title="Flyt tilbage";
+ml.addEventListener("click",e=>{e.stopPropagation();mv(i,-1);});
+let mr=C("button","icon-btn");
+mr.textContent="▶";
+mr.title="Flyt frem";
+mr.addEventListener("click",e=>{e.stopPropagation();mv(i,1);});
+let tog=C("button","icon-btn");
+act.append(ml,mr,tog);
+h.appendChild(act);
+c.appendChild(h);
+let b=C("div","card-body");
+let sub=C("div","card-subtitle");
+sub.textContent="Træk for at omarrangere øvelser. På mobil kan du også bruge ◀/▶ pr. øvelse.";
+b.appendChild(sub);
+let tr=C("div","template-row");
+let lab=C("label");
+lab.textContent="Skabelon (anvendes med det samme): ";
+lab.htmlFor=`templ-${i}`;
+tr.appendChild(lab);
+let sel=C("select");
+sel.id=`templ-${i}`;
+let none=C("option");
+none.value="";
+none.textContent="Ingen";
+sel.appendChild(none);
+Object.keys(s.t).forEach(tn=>{let o=C("option");o.value=tn;o.textContent=`${tn} (${(s.t[tn]||[]).length})`;sel.appendChild(o);});
+sel.value=s.a[d]||"";
+sel.addEventListener("change",()=>{if(sel.value)applyT(d,sel.value);else{delete s.a[d];save();rPlan();rToday();}});
+tr.appendChild(sel);
+b.appendChild(tr);
+let ul=C("ul","exercise-list");
+ul.dataset.dayName=d;
+let exs=s.w[d]||[];
+if(exs.length){
+exs.forEach((e,j)=>{
+let row=liMake(d,e,j);
+row.style.flexDirection='column';
+row.style.alignItems='stretch';
+let ex=exRef(e),goal=getProgressionGoal(ex),key=exId(ex),hist=findExerciseHistory(key,null);
+let trendWrap=C('div','card-subtitle');
+trendWrap.style.margin='0.35rem 0 0';
+let outcomes=hist.slice(-4).map(x=>x.log).reduce((acc,log,idx,arr)=>{if(idx===0)return acc;let prev=arr[idx-1];let st=metricsDeltaStatus(getExerciseLogMetric(log,goal.primaryMetric),getExerciseLogMetric(prev,goal.primaryMetric),0.1);acc.push(st==='up'?'↑':(st==='down'?'↓':'→'));return acc;},[]).slice(-3);
+trendWrap.textContent=`Trend: ${outcomes.length?outcomes.join(' '):'ingen historik'}`;
+let goalRow=C('div');
+goalRow.className='template-row';
+goalRow.style.margin='0.35rem 0 0';
+let minInp=C('input','exercise-progress-input');minInp.type='number';minInp.min='1';minInp.step='1';minInp.value=goal.repRangeMin;
+let maxInp=C('input','exercise-progress-input');maxInp.type='number';maxInp.min='1';maxInp.step='1';maxInp.value=goal.repRangeMax;
+let incInp=C('input','exercise-progress-input');incInp.type='number';incInp.min='0.5';incInp.step='0.5';incInp.value=goal.incrementKg;
+let metricSel=C('select');
+['topSet','e1RM','volume'].forEach(v=>{let o=C('option');o.value=v;o.textContent=v;metricSel.appendChild(o);});
+metricSel.value=goal.primaryMetric;
+let commitGoal=()=>{s.pg[key]=normalizeProgressionGoal({repRangeMin:parseInt(minInp.value,10),repRangeMax:parseInt(maxInp.value,10),incrementKg:parseFloat(incInp.value),primaryMetric:metricSel.value},ex);save();trendWrap.textContent=`Trend: ${outcomes.length?outcomes.join(' '):'ingen historik'}`;};
+[minInp,maxInp,incInp].forEach(inp=>inp.addEventListener('change',commitGoal));
+metricSel.addEventListener('change',commitGoal);
+goalRow.append(C('span','card-subtitle'),minInp,maxInp,incInp,metricSel);
+goalRow.firstChild.textContent='Mål';
+row.append(trendWrap,goalRow);
+ul.appendChild(row);
+});
+}else{let li=C("li","exercise-item");li.textContent="Ingen øvelser endnu.";ul.appendChild(li);}
+b.appendChild(ul);
+let ir=C("div","exercise-input-row");
+let ab=C("button","primary-btn");
+ab.textContent="➕ Tilføj øvelse";
+ab.addEventListener("click",()=>{openAddExerciseModal(d);});
+ir.appendChild(ab);
+b.appendChild(ir);
+let nl=C("div","card-subtitle");
+nl.textContent="Noter til dagen (valgfrit):";
+b.appendChild(nl);
+let ta=C("textarea","notes-textarea");
+ta.value=s.n[d]||"";
+ta.addEventListener("input",()=>{s.n[d]=ta.value;save();});
+b.appendChild(ta);
+c.appendChild(b);
+let col=!!(s.meta&&s.meta.ui&&s.meta.ui.planCollapsed&&s.meta.ui.planCollapsed[d]);
+b.classList.toggle("collapsed",col);
+tog.textContent=col?"▲":"▼";
+h.addEventListener("click",()=>{col=!col;b.classList.toggle("collapsed",col);tog.textContent=col?"▲":"▼";s.meta.ui.planCollapsed[d]=col;save();});
+p.appendChild(c);
+});
+setupDnD();
+}
+function rTem(){let m=$("template-manager");if(!m)return;m.innerHTML="";let c=C("div","card"),h=C("h2");h.textContent="Skabeloner";c.appendChild(h);let ul=C("ul","template-list");Object.keys(s.t).forEach(tn=>{let li=C("li","template-item"),sp=C("span");let exerciseCount=(s.t[tn]||[]).length;let usedCount=Object.values(s.a||{}).filter(v=>v===tn).length;sp.textContent=`${tn} · ${exerciseCount} øvelser${usedCount?` · bruges på ${usedCount} dag(e)`:''}`;li.appendChild(sp);let ed=C("button","icon-btn");ed.textContent="✎";ed.title="Rediger";ed.addEventListener("click",()=>{openTemplateModal('edit',tn);});li.appendChild(ed);let del=C("button","icon-btn");del.textContent="✕";del.title="Slet";del.addEventListener("click",()=>{showConfirm('Slet skabelon',`Slet '${tn}'?`,()=>{delete s.t[tn];for(let d in s.a)if(s.a[d]===tn)delete s.a[d];save();rTem();rPlan();});});li.appendChild(del);ul.appendChild(li);});c.appendChild(ul);let ab=C("button","primary-btn full-width");ab.textContent="Opret ny skabelon";ab.addEventListener("click",()=>{openTemplateModal('create',null);});c.appendChild(ab);m.appendChild(c);} 
+function liMake(d,n,j){let li=C("li","exercise-item");li.draggable=true;li.dataset.index=j;li.dataset.dayName=d;let nm=exName(n);let sp=C("span","exercise-name");sp.textContent=nm;let ac=C("div","exercise-actions");let moveUp=C("button","icon-btn");moveUp.textContent="◀";moveUp.title="Flyt øvelse op";moveUp.addEventListener("click",()=>{moveExercise(d,j,-1);});let moveDown=C("button","icon-btn");moveDown.textContent="▶";moveDown.title="Flyt øvelse ned";moveDown.addEventListener("click",()=>{moveExercise(d,j,1);});let dh=C("button","icon-btn");dh.textContent="↕";dh.title="Træk";let db=C("button","icon-btn");db.textContent="✕";db.title="Slet";db.addEventListener("click",()=>{showConfirm('Slet øvelse',`Slet '${nm}'?`,()=>{del(d,j);rPlan();rToday();});});ac.append(moveUp,moveDown,dh,db);li.append(sp,ac);return li;} 
 let dragSrc=null;function setupDnD(){document.querySelectorAll(".exercise-item[draggable='true']").forEach(it=>{it.addEventListener("dragstart",hDS);it.addEventListener("dragend",hDE);});document.querySelectorAll(".exercise-list").forEach(l=>{l.addEventListener("dragover",hDO);l.addEventListener("drop",hDrop);});}
 function hDS(e){dragSrc=this;this.classList.add("dragging");e.dataTransfer.effectAllowed="move";}function hDE(){this.classList.remove("dragging");dragSrc=null;}function hDO(e){e.preventDefault();e.dataTransfer.dropEffect="move";const aft=getAfter(this,e.clientY);const dg=document.querySelector(".exercise-item.dragging");if(!dg)return;if(!aft)this.appendChild(dg);else this.insertBefore(dg,aft);}function hDrop(e){e.preventDefault();const d=this.dataset.dayName;if(!d)return;let arr=[];this.querySelectorAll(".exercise-item[draggable='true']").forEach(li=>{arr.push(s.w[d][parseInt(li.dataset.index,10)]);});s.w[d]=arr;save();rPlan();rToday();}
-function getAfter(c,y){return [...c.querySelectorAll(".exercise-item[draggable='true']:not(.dragging)")].reduce((c,ch)=>{let b=ch.getBoundingClientRect(),off=y-b.top-b.height/2;return(off<0&&off>c.off)?{off,el:ch}:c;},{off:-1e9,el:null}).el;}function add(d,e){if(!d)return;if(!s.w||typeof s.w!="object")s.w={};if(!Array.isArray(s.w[d]))s.w[d]=[];s.w[d].push(exRef(e));save();}function del(d,i){s.w[d].splice(i,1);save();}function rename(i,n){let o=s.split[i];if(n===o)return;if(s.split.includes(n)){alert("Navn findes");return;}s.split[i]=n;s.w[n]=s.w[o]||[];delete s.w[o];s.n[n]=s.n[o]||"";delete s.n[o];for(let k in s.cd)if(s.cd[k].dayName===o)s.cd[k].dayName=n;if(s.a[o]){s.a[n]=s.a[o];delete s.a[o];}save();rPlan();rToday();rCal();}function mv(i,dx){let ni=i+dx;let L=s.split.length;if(ni<0||ni>=L)return;[s.split[i],s.split[ni]]=[s.split[ni],s.split[i]];let cn=getCur();s.ci=s.split.indexOf(cn);save();rPlan();rToday();rCal();}function getCur(){return s.split[s.ci];}function applyT(d,tn){if(!tn||!s.t[tn])return; s.w[d]=(s.w[d]||[]).concat(s.t[tn].map(exRef));s.a[d]=tn;save();rPlan();rToday();}
+function getAfter(c,y){return [...c.querySelectorAll(".exercise-item[draggable='true']:not(.dragging)")].reduce((c,ch)=>{let b=ch.getBoundingClientRect(),off=y-b.top-b.height/2;return(off<0&&off>c.off)?{off,el:ch}:c;},{off:-1e9,el:null}).el;}function add(d,e){if(!d)return;if(!s.w||typeof s.w!="object")s.w={};if(!Array.isArray(s.w[d]))s.w[d]=[];s.w[d].push(exRef(e));save();}function del(d,i){s.w[d].splice(i,1);save();}function moveExercise(dayName,index,delta){if(!Array.isArray(s.w[dayName]))return;let next=index+delta;if(next<0||next>=s.w[dayName].length)return;[s.w[dayName][index],s.w[dayName][next]]=[s.w[dayName][next],s.w[dayName][index]];save();rPlan();rToday();}function rename(i,n){let o=s.split[i];if(n===o)return;if(s.split.includes(n)){alert("Navn findes");return;}s.split[i]=n;s.w[n]=s.w[o]||[];delete s.w[o];s.n[n]=s.n[o]||"";delete s.n[o];for(let k in s.cd)if(s.cd[k].dayName===o)s.cd[k].dayName=n;if(s.a[o]){s.a[n]=s.a[o];delete s.a[o];}save();rPlan();rToday();rCal();}function mv(i,dx){let ni=i+dx;let L=s.split.length;if(ni<0||ni>=L)return;[s.split[i],s.split[ni]]=[s.split[ni],s.split[i]];let cn=getCur();s.ci=s.split.indexOf(cn);save();rPlan();rToday();rCal();}function getCur(){return s.split[s.ci];}function applyT(d,tn){if(!tn||!s.t[tn])return; s.w[d]=(s.w[d]||[]).concat(s.t[tn].map(exRef));s.a[d]=tn;save();if(typeof showSyncToast==='function')showSyncToast(`Skabelon '${tn}' anvendt på ${d}`,'info');rPlan();rToday();}
 function mark(){let t=iso(new Date()),d=nameFor(t);if(s.cd&&s.cd[t]){delete s.cd[t];}else{let ex=(s.w[d]||[]).map(exRef),dayLog=getDayLog(t,d);aggregateDayLog(t,d);let exerciseLogs=ex.map((entry,idx)=>{let entryKey=occKey(entry,idx),exerciseKey=exId(entry),p=normalizeExerciseProgress(dayLog.exercises&&dayLog.exercises[entryKey]?dayLog.exercises[entryKey]:{done:false,reps:0,kilos:0,sets:[{reps:0,kilos:0,isWarmup:false}]},entry);let history=findExerciseHistory(exerciseKey,t);let prevBestLoad=history.reduce((m,h)=>Math.max(m,(h.log.topSet&&h.log.topSet.kilos)||h.log.kilos||0),0);let prevBestE1rm=history.reduce((m,h)=>Math.max(m,toNum(h.log.estimated1RM)||0),0);let prevBestVol=history.reduce((m,h)=>Math.max(m,toNum(h.log.volumeKg)||0),0);let sameLoadBestReps=history.reduce((m,h)=>{let top=(h.log.topSet||{kilos:h.log.kilos||0,reps:h.log.reps||0});if((top.kilos||0)!==(p.topSet&&p.topSet.kilos||0))return m;return Math.max(m,top.reps||0);},0);let top=p.topSet||{reps:p.reps||0,kilos:p.kilos||0};return{id:exerciseKey,exerciseKey,occurrenceKey:entryKey,name:exName(entry),exerciseId:entry.exerciseId||null,bodyParts:entry.bodyParts||[],targetMuscles:entry.targetMuscles||[],equipments:entry.equipments||[],done:!!p.done,reps:p.reps??0,kilos:p.kilos??0,topSet:top,sets:p.sets||[],volumeKg:p.volumeKg||0,totalReps:p.totalReps||0,totalSets:p.totalSets||0,estimated1RM:p.estimated1RM||0,exerciseNotes:p.exerciseNotes||'',painFlag:!!p.painFlag,isPR_load:(top.kilos||0)>prevBestLoad,isPR_repsAtLoad:(top.reps||0)>sameLoadBestReps,isPR_e1RM:(p.estimated1RM||0)>prevBestE1rm,isPR_volume:(p.volumeKg||0)>prevBestVol};});let summary=aggregateDayLog(t,d);s.cd[t]={dayName:d,exercises:ex.map(exName),exerciseLogs:exerciseLogs,notes:s.n[d]||"",completedAt:new Date().toISOString(),summary};}
 s.last=latestCompletedDate();save();rToday();rCal();}
-let cur=new Date();function rCal(m){if(m)cur=m;let g=$("calendar-grid"),l=$("calendar-month-label"),w=$("calendar-weekly-summary");let y=cur.getFullYear(),mon=cur.getMonth();l.textContent=cur.toLocaleString('default',{month:'long',year:'numeric'});g.innerHTML='';let nowIso=iso(new Date());let weekCurrent=getWeekSummary(nowIso);let prevKey=getPreviousWeekKey(weekCurrent.weekKey);let weekPrev={totalVolumeKg:0,totalSets:0,totalReps:0,sessions:0,prCount:0};Object.keys(s.cd||{}).forEach(dateIso=>{if(getIsoWeekKey(dateIso)!==prevKey)return;let day=s.cd[dateIso];weekPrev.sessions++;(day.exerciseLogs||[]).forEach(log=>{weekPrev.totalVolumeKg+=(toNum(log.volumeKg)||0);weekPrev.totalSets+=(toNum(log.totalSets)||0);weekPrev.totalReps+=(toNum(log.totalReps)||0);if(log.isPR_load||log.isPR_repsAtLoad||log.isPR_e1RM||log.isPR_volume)weekPrev.prCount++;});});if(w){let delta=Math.round((weekCurrent.totalVolumeKg-weekPrev.totalVolumeKg)*100)/100;let block=getBlockSummary(nowIso);w.textContent=`Uge ${weekCurrent.weekKey}: ${weekCurrent.sessions} pas · ${weekCurrent.totalVolumeKg} kg vol · ${weekCurrent.prCount} PR · Δ vol vs sidste uge: ${delta>=0?'+':''}${delta} · Block ${block.blockKey}: ${block.sessions} pas / ${block.totalVolumeKg} kg`;}
+let cur=new Date();function rCal(m){if(m)cur=m;let g=$("calendar-grid"),l=$("calendar-month-label"),w=$("calendar-weekly-summary");let y=cur.getFullYear(),mon=cur.getMonth();l.textContent=cur.toLocaleString('default',{month:'long',year:'numeric'});g.innerHTML='';let nowIso=iso(new Date());let weekCurrent=getWeekSummary(nowIso);let prevKey=getPreviousWeekKey(weekCurrent.weekKey);let weekPrev={totalVolumeKg:0,totalSets:0,totalReps:0,sessions:0,prCount:0};Object.keys(s.cd||{}).forEach(dateIso=>{if(getIsoWeekKey(dateIso)!==prevKey)return;let day=s.cd[dateIso];weekPrev.sessions++;(day.exerciseLogs||[]).forEach(log=>{weekPrev.totalVolumeKg+=(toNum(log.volumeKg)||0);weekPrev.totalSets+=(toNum(log.totalSets)||0);weekPrev.totalReps+=(toNum(log.totalReps)||0);if(log.isPR_load||log.isPR_repsAtLoad||log.isPR_e1RM||log.isPR_volume)weekPrev.prCount++;});});if(w){let delta=Math.round((weekCurrent.totalVolumeKg-weekPrev.totalVolumeKg)*100)/100;let block=getBlockSummary(nowIso);w.innerHTML='';let line1=C('div','calendar-summary-line');line1.textContent=`Uge ${weekCurrent.weekKey}: ${weekCurrent.sessions} pas · ${weekCurrent.totalVolumeKg} kg vol`;let line2=C('div','calendar-summary-line');line2.textContent=`PR: ${weekCurrent.prCount} · Δ vol: ${delta>=0?'+':''}${delta} · Block ${block.blockKey}: ${block.sessions} pas / ${block.totalVolumeKg} kg`;let legend=C('div','calendar-legend');let lgDone=C('span','calendar-legend-item');lgDone.textContent='● Gennemført';let lgPr=C('span','calendar-legend-item');lgPr.textContent='● PR dag';let lgReg=C('span','calendar-legend-item');lgReg.textContent='● Regression';lgDone.style.color='#16a34a';lgPr.style.color='#2563eb';lgReg.style.color='#dc2626';legend.append(lgDone,lgPr,lgReg);w.append(line1,line2,legend);}
 ['Søn','Man','Tir','Ons','Tor','Fre','Lør'].forEach(wd=>{let h=C('div','calendar-cell');h.style.fontWeight='700';h.style.textAlign='center';h.textContent=wd;g.appendChild(h);});let f=new Date(y,mon,1),sd=f.getDay(),dim=new Date(y,mon+1,0).getDate();for(let i=0;i<sd;i++){let c=C('div','calendar-cell');c.classList.add('empty');g.appendChild(c);}for(let d=1;d<=dim;d++){let dt=new Date(y,mon,d),isoD=iso(dt),dn=nameFor(isoD),comp=s.cd&&s.cd[isoD];let c=C('button','calendar-cell');c.type='button';if(dt>new Date())c.classList.add('future');let top=C('div');top.style.display='flex';top.style.alignItems='center';let num=C('div','calendar-day-num');num.textContent=d;let ind=C('div');if(comp)ind.className='completed-indicator';if(comp&&Array.isArray(comp.exerciseLogs)){let hasPr=comp.exerciseLogs.some(log=>log.isPR_load||log.isPR_repsAtLoad||log.isPR_e1RM||log.isPR_volume);let hasReg=comp.exerciseLogs.some(log=>{let hist=findExerciseHistory(log.exerciseKey||log.id,isoD);if(!hist.length)return false;let prev=hist[hist.length-1].log;return metricsDeltaStatus(getExerciseLogMetric(log,'topSet'),getExerciseLogMetric(prev,'topSet'),0.1)==='down';});if(hasPr)ind.style.background='#2563eb';if(hasReg){ind.style.background='#dc2626';ind.style.boxShadow='0 0 0 2px #fecaca';}}
 top.append(num,ind);let name=C('div','calendar-day-name');name.textContent=dn;c.append(top,name);c.addEventListener('click',()=>openModal(isoD));g.appendChild(c);} }
 function openModal(i){let m=$("day-modal"),t=$("modal-day-title"),me=$("modal-day-meta"),l=$("modal-exercise-list"),no=$("modal-notes");if(!m)return;let dn=nameFor(i);t.textContent=`${i} — ${dn}`;l.innerHTML='';let comp=s.cd&&s.cd[i]; if(comp){let sum=comp.summary||{dayVolumeKg:0,daySets:0,dayReps:0,completedExerciseCount:0};me.textContent=`Gennemført · Vol: ${sum.dayVolumeKg||0} kg · Sæt: ${sum.daySets||0} · Reps: ${sum.dayReps||0}`;if(Array.isArray(comp.exerciseLogs)&&comp.exerciseLogs.length){comp.exerciseLogs.forEach(log=>{let li=C('li','exercise-item');let repTxt=log.reps===null||log.reps===undefined?'—':String(log.reps);let kgTxt=log.kilos===null||log.kilos===undefined?'—':String(log.kilos);let pr=[];if(log.isPR_load)pr.push('PR kg');if(log.isPR_repsAtLoad)pr.push('PR reps');if(log.isPR_e1RM)pr.push('PR e1RM');if(log.isPR_volume)pr.push('PR vol');li.textContent=`${log.done?'✅':'⬜'} ${log.name} · Top: ${kgTxt}kg × ${repTxt} · Vol: ${log.volumeKg||0}${pr.length?` · ${pr.join(', ')}`:''}`;l.appendChild(li);});}else{(comp.exercises||[]).forEach(e=>{let li=C('li','exercise-item');li.textContent=exName(e);l.appendChild(li);});}no.textContent=comp.notes||'';}else{me.textContent='Planlagt / ikke markeret';let pl=s.w[dn]||[];if(pl.length===0){let li=C('li','exercise-item');li.textContent='Ingen øvelser planlagt.';l.appendChild(li);}else pl.forEach(e=>{let li=C('li','exercise-item');li.textContent=exName(e);l.appendChild(li);});no.textContent=s.n[dn]||'';}m.setAttribute('aria-hidden','false');}
@@ -99,10 +356,13 @@ function closeModal(){let m=$("day-modal");if(m)m.setAttribute('aria-hidden','tr
 function setupTabs(){
 	let bs=document.querySelectorAll(".tab-button"),cs=document.querySelectorAll(".tab-content");
 	if(!bs.length||!cs.length){console.warn('[setupTabs] Missing tab buttons or tab content containers');return;}
+	let activateTab=(tab)=>{let tabEl=$("tab-"+tab);if(!tabEl)return;bs.forEach(x=>x.classList.remove("active"));cs.forEach(x=>x.classList.remove("active"));let targetBtn=[...bs].find(x=>x.dataset.tab===tab);if(targetBtn)targetBtn.classList.add("active");tabEl.classList.add("active");};
+	let preferred=getActiveTab();
+	if(preferred&&$("tab-"+preferred)){activateTab(preferred);}else{let initial=[...bs].find(x=>x.classList.contains('active'));if(initial)setActiveTab(initial.dataset.tab);} 
 	bs.forEach(b=>{
 		if(b.dataset.boundClick==='1')return;
 		b.dataset.boundClick='1';
-		b.addEventListener("click",()=>{let t=b.dataset.tab;let tabEl=$("tab-"+t);if(!tabEl){console.warn(`[setupTabs] Missing tab container: tab-${t}`);return;}bs.forEach(x=>x.classList.remove("active"));cs.forEach(x=>x.classList.remove("active"));b.classList.add("active");tabEl.classList.add("active");});
+		b.addEventListener("click",()=>{let t=b.dataset.tab;let tabEl=$("tab-"+t);if(!tabEl){console.warn(`[setupTabs] Missing tab container: tab-${t}`);return;}activateTab(t);setActiveTab(t);});
 	});
 }
 function ensureModalShell(id,onClose){let existing=$(id);if(existing)return existing;let m=C('div');m.id=id;m.className='modal';m.setAttribute('aria-hidden','true');let bd=C('div','modal-backdrop');bd.addEventListener('click',onClose);m.appendChild(bd);let mc=C('div','modal-content');mc.setAttribute('role','dialog');mc.setAttribute('aria-modal','true');let cb=C('button','icon-btn');cb.textContent='✕';cb.title='Luk';cb.addEventListener('click',onClose);mc.appendChild(cb);m.appendChild(mc);document.body.appendChild(m);return m;}
