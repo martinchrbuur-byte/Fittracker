@@ -2,6 +2,11 @@
 
 Browser SPA using localStorage; optional Electron wrapper for a Windows exe.
 
+## Current UI
+- I dag
+- Plan
+- Kalender
+
 ## Setup
 `powershell
 npm install
