@@ -242,6 +242,14 @@ main {
   min-width: 32px;
 }
 
+.exercise-remove-btn {
+  color: #dc2626;
+}
+
+.exercise-remove-btn:active {
+  color: #991b1b;
+}
+
 .exercise-progress-left {
   display: flex;
   align-items: center;
