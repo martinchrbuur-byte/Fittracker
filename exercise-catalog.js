@@ -33,6 +33,17 @@
     };
   }
 
+  function normalizeSearch(value){
+    return String(value || '')
+      .toLocaleLowerCase('da-DK')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/æ/g, 'ae')
+      .replace(/ø/g, 'oe')
+      .replace(/å/g, 'aa')
+      .trim();
+  }
+
   async function tryFetch(url){
     const res = await fetch(url, { method:'GET' });
     if(!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -63,14 +74,35 @@
 
   async function searchExercises(options){
     const opts = options || {};
-    const payload = await proxyOrDirect('/exercises', {
-      search: opts.search || '',
+    const requestedSearch = (opts.search || '').trim();
+
+    let payload = await proxyOrDirect('/exercises', {
+      search: requestedSearch,
       bodyPart: opts.bodyPart || '',
       muscle: opts.muscle || '',
       equipment: opts.equipment || '',
       limit: opts.limit || 25,
       offset: opts.offset || 0,
     });
+
+    const normalizedSearch = normalizeSearch(requestedSearch);
+    const loweredSearch = requestedSearch.toLocaleLowerCase('da-DK').trim();
+    if (
+      requestedSearch &&
+      normalizedSearch &&
+      normalizedSearch !== loweredSearch &&
+      Array.isArray(payload?.data) &&
+      payload.data.length === 0
+    ) {
+      payload = await proxyOrDirect('/exercises', {
+        search: normalizedSearch,
+        bodyPart: opts.bodyPart || '',
+        muscle: opts.muscle || '',
+        equipment: opts.equipment || '',
+        limit: opts.limit || 25,
+        offset: opts.offset || 0,
+      });
+    }
 
     const data = Array.isArray(payload.data) ? payload.data : [];
     const metadata = payload.metadata || {};
