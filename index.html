@@ -20,6 +20,7 @@
     <button class="tab-button active" data-tab="today">I dag</button>
     <button class="tab-button" data-tab="plan">Plan</button>
     <button class="tab-button" data-tab="calendar">Kalender</button>
+    <button id="admin-tab-btn" class="tab-button" data-tab="admin" style="display:none">Admin</button>
   </nav>
 
   <main>
@@ -81,11 +82,31 @@
         </div>
       </div>
     </section>
-  </main>
 
-  <footer class="app-footer">
-    <small>PPL AB Planner – lokal, ingen backend, data gemmes i din browser.</small>
-  </footer>
+    <!-- Admin -->
+    <section id="tab-admin" class="tab-content">
+      <div class="card">
+        <h2>Admin</h2>
+        <p class="card-subtitle" style="margin-top:0.35rem;">
+          Sync-diagnostik og driftshandlinger for administrator.
+        </p>
+        <div id="admin-auth-status" class="card-subtitle"></div>
+        <div id="admin-sync-status" class="card-subtitle"></div>
+        <div id="admin-queue-status" class="card-subtitle"></div>
+        <div class="template-row" style="margin-top:0.5rem;">
+          <button id="admin-refresh" class="secondary-btn">Opdatér status</button>
+          <button id="admin-process-queue" class="primary-btn">Kør offline-kø</button>
+          <button id="admin-clear-queue" class="danger-btn">Ryd offline-kø</button>
+        </div>
+        <div class="template-row" style="margin-top:0.5rem;">
+          <button id="admin-force-sync" class="primary-btn">Tving sync nu</button>
+          <button id="admin-export" class="secondary-btn">Eksportér backup</button>
+          <button id="admin-import-btn" class="secondary-btn">Importér backup</button>
+          <input id="admin-import-file" type="file" accept="application/json" style="display:none" />
+        </div>
+      </div>
+    </section>
+  </main>
 
   <script src="auth.js"></script>
   <script src="sync.js"></script>

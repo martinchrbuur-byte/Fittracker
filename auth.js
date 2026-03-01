@@ -10,7 +10,11 @@ const AUTH_STORAGE_KEYS = {
   ACCESS_TOKEN: 'auth_access_token',
   REFRESH_TOKEN: 'auth_refresh_token',
   USER_ID: 'auth_user_id',
+  USER_EMAIL: 'auth_user_email',
+  USER_PROFILE: 'auth_user_profile',
 };
+
+const AUTH_ADMIN_EMAIL = 'martin.chr.buur@gmail.com';
 
 function authIsLocalDevBypassEnabled() {
   try {
@@ -80,6 +84,99 @@ function authDecodeUserIdFromJWT(token) {
   }
 }
 
+function authDecodeClaimsFromJWT(token) {
+  if (!token || typeof token !== 'string') return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    return JSON.parse(atob(parts[1]));
+  } catch {
+    return null;
+  }
+}
+
+function authGetStoredUserProfile() {
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEYS.USER_PROFILE);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function authStoreUserProfile(profile) {
+  if (!profile || typeof profile !== 'object') return;
+  try {
+    localStorage.setItem(AUTH_STORAGE_KEYS.USER_PROFILE, JSON.stringify(profile));
+  } catch {}
+  const email = typeof profile.email === 'string' ? profile.email.trim() : '';
+  if (email) {
+    localStorage.setItem(AUTH_STORAGE_KEYS.USER_EMAIL, email);
+  }
+}
+
+function authExtractRoles(profile) {
+  const roles = [];
+  const appMeta = profile && profile.app_metadata && typeof profile.app_metadata === 'object' ? profile.app_metadata : {};
+  const userMeta = profile && profile.user_metadata && typeof profile.user_metadata === 'object' ? profile.user_metadata : {};
+  const maybePush = (value) => {
+    if (typeof value === 'string' && value.trim()) roles.push(value.trim().toLowerCase());
+  };
+  maybePush(appMeta.role);
+  maybePush(userMeta.role);
+  if (Array.isArray(appMeta.roles)) appMeta.roles.forEach(maybePush);
+  if (Array.isArray(userMeta.roles)) userMeta.roles.forEach(maybePush);
+  return [...new Set(roles)];
+}
+
+async function authFetchCurrentUserProfile() {
+  if (!authIsLoggedIn()) return null;
+  try {
+    const res = await authFetch('/auth/v1/user', { method: 'GET' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || typeof data !== 'object') return null;
+    authStoreUserProfile(data);
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+async function authRefreshUserProfile() {
+  return authFetchCurrentUserProfile();
+}
+
+function authGetUserProfile() {
+  return authGetStoredUserProfile();
+}
+
+function authGetUserEmail() {
+  const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER_EMAIL);
+  if (stored && stored.trim()) return stored.trim();
+  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  const claims = authDecodeClaimsFromJWT(token);
+  const email = claims && typeof claims.email === 'string' ? claims.email.trim() : '';
+  if (email) {
+    localStorage.setItem(AUTH_STORAGE_KEYS.USER_EMAIL, email);
+    return email;
+  }
+  const profile = authGetStoredUserProfile();
+  return profile && typeof profile.email === 'string' ? profile.email.trim() : null;
+}
+
+function authIsAdminAuthorized() {
+  const email = (authGetUserEmail() || '').toLowerCase();
+  if (email !== AUTH_ADMIN_EMAIL) return false;
+  const profile = authGetStoredUserProfile();
+  if (!profile) return false;
+  const roles = authExtractRoles(profile);
+  return roles.includes('admin');
+}
+
 /* Sign Up */
 async function authSignup(email, password) {
   try {
@@ -101,6 +198,9 @@ async function authSignup(email, password) {
     const data = await res.json();
     if (data.session) {
       authStoreSession(data.session, data.user && data.user.id ? data.user.id : null);
+      if (data.user && typeof data.user === 'object') {
+        authStoreUserProfile(data.user);
+      }
       return { success: true, user: data.user };
     } else if (data.user) {
       return {
@@ -140,6 +240,11 @@ async function authSignin(email, password) {
       (data.user && data.user.id) ||
       authDecodeUserIdFromJWT(data.access_token);
     authStoreSession(data, userId);
+    if (data.user && typeof data.user === 'object') {
+      authStoreUserProfile(data.user);
+    } else {
+      await authRefreshUserProfile();
+    }
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -172,6 +277,11 @@ async function refreshAuthToken() {
       (data.user && data.user.id) ||
       authDecodeUserIdFromJWT(data.access_token);
     authStoreSession(data, userId);
+    if (data.user && typeof data.user === 'object') {
+      authStoreUserProfile(data.user);
+    } else {
+      await authRefreshUserProfile();
+    }
     return true;
   } catch (err) {
     console.error('Token refresh failed:', err);
@@ -226,6 +336,8 @@ async function authLogout() {
   localStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
   localStorage.removeItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN);
   localStorage.removeItem(AUTH_STORAGE_KEYS.USER_ID);
+  localStorage.removeItem(AUTH_STORAGE_KEYS.USER_EMAIL);
+  localStorage.removeItem(AUTH_STORAGE_KEYS.USER_PROFILE);
 
   // Close any auth modals
   closeMod('login-modal');
@@ -479,6 +591,7 @@ async function authInit() {
 
   if (authIsLoggedIn()) {
     // User is logged in, proceed with app
+    await authRefreshUserProfile();
     closeMod('login-modal');
     closeMod('signup-modal');
     return true;
