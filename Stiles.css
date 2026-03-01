@@ -210,6 +210,37 @@ main {
   font-size: 0.95rem;
 }
 
+.exercise-progress-item {
+  gap: 0.6rem;
+}
+
+.exercise-progress-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.exercise-progress-item.done .exercise-name {
+  text-decoration: line-through;
+  color: #6b7280;
+}
+
+.exercise-progress-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.exercise-progress-input {
+  width: 68px;
+  padding: 0.35rem 0.45rem;
+  border-radius: 0.4rem;
+  border: 1px solid #d1d5db;
+  font-size: 0.85rem;
+}
+
 .exercise-actions {
   display: flex;
   align-items: center;
