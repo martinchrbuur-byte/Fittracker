@@ -87,9 +87,15 @@
     const directUrl = `${DIRECT_BASE}${path}${query}`;
 
     if (FORCE_PROXY) {
-      const payload = await tryFetch(proxyUrl);
-      window.__catalogRouteMode = 'proxy';
-      return payload;
+      try {
+        const payload = await tryFetch(proxyUrl);
+        window.__catalogRouteMode = 'proxy';
+        return payload;
+      } catch {
+        const payload = await tryFetch(directUrl);
+        window.__catalogRouteMode = 'direct';
+        return payload;
+      }
     }
 
     try {
