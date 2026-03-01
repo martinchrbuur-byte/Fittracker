@@ -9,6 +9,7 @@ body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   background: #f5f5f7;
   color: #111827;
+  line-height: 1.4;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -27,6 +28,7 @@ body {
 
 .app-header h1 {
   font-size: 1.4rem;
+  line-height: 1.2;
   flex: 1;
 }
 
@@ -64,7 +66,8 @@ body {
 
 .tab-button {
   flex: 1;
-  padding: 0.75rem;
+  padding: 0.8rem 0.6rem;
+  min-height: 44px;
   border: none;
   background: transparent;
   font-size: 0.95rem;
@@ -80,7 +83,7 @@ body {
 
 main {
   flex: 1;
-  padding: 0.75rem;
+  padding: 0.9rem 0.75rem;
   max-width: 700px;
   width: 100%;
   margin: 0 auto;
@@ -101,6 +104,7 @@ main {
   border-radius: 0.5rem;
   border: none;
   padding: 0.75rem 1rem;
+  min-height: 44px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -168,7 +172,7 @@ main {
 }
 
 .today-day-name {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 700;
   margin-top: 0.1rem;
 }
@@ -185,6 +189,12 @@ main {
   margin-top: 0.1rem;
 }
 
+#mark-today {
+  position: sticky;
+  bottom: 0.6rem;
+  z-index: 5;
+}
+
 /* Exercise list */
 .exercise-list {
   list-style: none;
@@ -194,8 +204,8 @@ main {
 .exercise-item {
   background: #ffffff;
   border-radius: 0.5rem;
-  padding: 0.6rem 0.75rem;
-  margin-bottom: 0.4rem;
+  padding: 0.85rem;
+  margin-bottom: 0.55rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -208,10 +218,28 @@ main {
 
 .exercise-name {
   font-size: 0.95rem;
+  font-weight: 600;
 }
 
 .exercise-progress-item {
   gap: 0.6rem;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.exercise-top-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.exercise-mini-metrics {
+  margin: 0;
+  text-align: right;
+}
+
+.exercise-expand-btn {
+  min-width: 32px;
 }
 
 .exercise-progress-left {
@@ -231,14 +259,92 @@ main {
   display: flex;
   align-items: center;
   gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
 .exercise-progress-input {
-  width: 68px;
-  padding: 0.35rem 0.45rem;
+  width: 72px;
+  padding: 0.45rem 0.45rem;
   border-radius: 0.4rem;
   border: 1px solid #d1d5db;
   font-size: 0.85rem;
+}
+
+.exercise-note-input {
+  width: 100%;
+}
+
+.exercise-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.exercise-sets-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.exercise-bottom-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.warmup-label {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.compact-btn {
+  padding: 0.4rem 0.55rem;
+  min-height: 36px;
+}
+
+.stepper-group {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 0.4rem;
+  overflow: hidden;
+}
+
+.stepper-group .exercise-progress-input {
+  border: none;
+  border-left: 1px solid #e5e7eb;
+  border-right: 1px solid #e5e7eb;
+  border-radius: 0;
+  width: 62px;
+  text-align: center;
+}
+
+.stepper-btn {
+  border-radius: 0;
+  min-height: 36px;
+  padding: 0.35rem 0.55rem;
+}
+
+.info-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.info-chip {
+  margin: 0;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+}
+
+.info-chip-target {
+  border-color: #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
 }
 
 .exercise-actions {
@@ -252,7 +358,9 @@ main {
   background: transparent;
   cursor: pointer;
   font-size: 1rem;
-  padding: 0.2rem;
+  padding: 0.35rem;
+  min-height: 36px;
+  min-width: 36px;
   color: #6b7280;
 }
 
@@ -269,8 +377,8 @@ main {
 
 .card {
   background: #ffffff;
-  border-radius: 0.75rem;
-  padding: 0.75rem;
+  border-radius: 0.8rem;
+  padding: 0.9rem;
   border: 1px solid #e5e7eb;
 }
 
@@ -322,12 +430,14 @@ main {
   font-size: 0.8rem;
   color: #6b7280;
   margin-bottom: 0.4rem;
+  line-height: 1.35;
 }
 
 /* Inputs */
 .template-row {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 0.4rem;
   margin-bottom: 0.5rem;
 }
@@ -363,7 +473,8 @@ main {
   border-radius: 0.5rem;
   border: 1px solid #d1d5db;
   font-size: 0.9rem;
-  min-height: 60px;
+  min-height: 72px;
+  line-height: 1.35;
   resize: vertical;
 }
 
@@ -377,6 +488,23 @@ main {
 
 /* Small screens */
 @media (max-width: 480px) {
+  .app-header {
+    padding: 0.85rem 0.75rem;
+  }
+
+  .app-header h1 {
+    font-size: 1.2rem;
+  }
+
+  .tab-button {
+    font-size: 0.9rem;
+    padding: 0.7rem 0.45rem;
+  }
+
+  main {
+    padding: 0.7rem 0.6rem;
+  }
+
   .today-header {
     flex-direction: column;
     align-items: stretch;
@@ -384,6 +512,11 @@ main {
 
   .nav-btn {
     width: 100%;
+  }
+
+  .card,
+  .exercise-item {
+    padding: 0.7rem;
   }
 }
 
@@ -400,6 +533,24 @@ main {
   grid-template-columns: repeat(7, 1fr);
   gap: 0.4rem;
   margin-top: 0.6rem;
+}
+
+.calendar-summary-line {
+  font-size: 0.8rem;
+  color: #374151;
+  margin-bottom: 0.2rem;
+}
+
+.calendar-legend {
+  margin-top: 0.35rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.calendar-legend-item {
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 .calendar-cell {
@@ -515,6 +666,7 @@ main {
   border-radius: 0.5rem;
   border: none;
   padding: 0.75rem 1rem;
+  min-height: 44px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
@@ -572,4 +724,23 @@ main {
 
 @media (max-width: 480px) {
   .calendar-cell { min-height: 80px; }
+
+  .exercise-top-row {
+    flex-wrap: wrap;
+  }
+
+  .exercise-mini-metrics {
+    text-align: left;
+    width: 100%;
+  }
+
+  .exercise-bottom-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .calendar-summary-line,
+  .calendar-legend-item {
+    font-size: 0.72rem;
+  }
 }
