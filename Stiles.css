@@ -173,6 +173,12 @@ main {
   margin-top: 0.1rem;
 }
 
+.today-completion-status {
+  font-size: 0.85rem;
+  font-weight: 600;
+  margin-top: 0.15rem;
+}
+
 .today-last-planned {
   font-size: 0.8rem;
   color: #6b7280;
