@@ -1,0 +1,16 @@
+{
+  "name": "ppl-ab-planner",
+  "version": "1.0.0",
+  "description": "A simple PPL AB workout planner bundled with Electron",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package-win": "electron-packager . \"PPL AB Planner\" --platform=win32 --arch=x64 --out=dist --overwrite"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^26.2.0",
+    "electron-packager": "^16.0.0"
+  }
+}

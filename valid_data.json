@@ -1,0 +1,71 @@
+{
+  "workouts": {
+    "Dag 1 – Bryst & triceps": [
+      "Incline barbell bench press 4x6-8",
+      "Bench press 3x6-8",
+      "Incline dumbbell press 2x8-10",
+      "Dumbbell flyes 2x12-15",
+      "Overhead extension 2x12-15",
+      "Lateral raises 2x12-15",
+      "Push-ups 1-2xAMRAP"
+    ],
+    "Dag 2 – Ryg & biceps": [
+      "Barbell row 4x8-10",
+      "One-arm dumbbell row 3x8-10",
+      "Face pulls 2x12-15",
+      "Reverse flyes 2x12-15",
+      "Barbell curls 2x8-10",
+      "Hammer curls 2x12-15"
+    ],
+    "Dag 3 – Deadlift-fokus": [
+      "Deadlift 3x5-6",
+      "Romanian deadlift 3x8-10",
+      "Bulgarian split squat 2x10-12",
+      "Calf raises 3x12-15",
+      "Dragon flags 2x6-8",
+      "Woodchopper 2x12-15"
+    ],
+    "Dag 4 – Skuldre & triceps": [
+      "Overhead press 4x6-8",
+      "Close-grip bench press 3x8-10",
+      "Dumbbell press 2x8-10",
+      "Skull crushers 2x12-15",
+      "Lateral raises 2x12-15",
+      "Push-ups 1xAMRAP"
+    ],
+    "Dag 5 – Ryg & biceps": [
+      "Barbell curls 3x8-10",
+      "Concentration curls 2x12-15",
+      "Pendlay row 4x6-8",
+      "Chest-supported row 3x8-10",
+      "Seated cable row 3x10-12",
+      "Reverse flyes 2x12-15"
+    ],
+    "Dag 6 – Squat-fokus": [
+      "Back squat 4x5-6",
+      "Walking lunges 3x12",
+      "Hip thrust 3x8-10",
+      "Calf raises 3x12-15",
+      "Dragon flags 2x6-8",
+      "Woodchopper 2x12-15"
+    ]
+  },
+  "splitOrder": [
+    "Dag 1 – Bryst & triceps",
+    "Dag 2 – Ryg & biceps",
+    "Dag 3 – Deadlift-fokus",
+    "Dag 4 – Skuldre & triceps",
+    "Dag 5 – Ryg & biceps",
+    "Dag 6 – Squat-fokus"
+  ],
+  "notes": {
+    "Dag 1 – Bryst & triceps": "",
+    "Dag 2 – Ryg & biceps": "",
+    "Dag 3 – Deadlift-fokus": "",
+    "Dag 4 – Skuldre & triceps": "",
+    "Dag 5 – Ryg & biceps": "",
+    "Dag 6 – Squat-fokus": ""
+  },
+  "lastPlannedDate": "2026-02-28",
+  "currentDayIndex": 0
+}

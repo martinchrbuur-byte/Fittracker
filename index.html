@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PPL AB Planner</title>
+  <link rel="stylesheet" href="Stiles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>PPL AB Planner</h1>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab-button active" data-tab="today">I dag</button>
+    <button class="tab-button" data-tab="plan">Plan</button>
+    <button class="tab-button" data-tab="data">Data</button>
+    <button class="tab-button" data-tab="calendar">Kalender</button>
+  </nav>
+
+  <main>
+    <!-- I dag -->
+    <section id="tab-today" class="tab-content active">
+      <div class="today-header">
+        <button id="prev-day" class="nav-btn">◀ Forrige</button>
+        <div class="today-info">
+          <div class="today-label">Dagens pas</div>
+          <div id="today-day-name" class="today-day-name"></div>
+          <div id="today-last-planned" class="today-last-planned"></div>
+        </div>
+        <button id="next-day" class="nav-btn">Næste ▶</button>
+      </div>
+
+      <ul id="today-exercise-list" class="exercise-list"></ul>
+
+      <button id="mark-today" class="primary-btn full-width">
+        Markér i dag som planlagt
+      </button>
+    </section>
+
+    <!-- Plan -->
+    <section id="tab-plan" class="tab-content">
+      <p class="card-subtitle" style="margin-bottom:0.5rem;">
+        Tryk ✎ for at omdøbe en dag, og brug pilene for at ændre rækkefølgen af dine splits. 
+        Du kan også administrere skabeloner nedenfor og anvende dem på en dag.
+      </p>
+      <div id="template-manager"></div>
+      <div id="plan-accordion" class="accordion"></div>
+    </section>
+
+    <!-- Data -->
+    <section id="tab-data" class="tab-content">
+      <div class="card">
+        <h2>Eksport</h2>
+        <p>Download alle data som en JSON-fil.</p>
+        <button id="export-json" class="primary-btn full-width">Eksportér JSON</button>
+      </div>
+
+      <div class="card">
+        <h2>Import</h2>
+        <p>Vælg en tidligere eksporteret JSON-fil for at genskabe state.</p>
+        <input type="file" id="import-file" accept="application/json" />
+      </div>
+
+      <div class="card danger">
+        <h2>Nulstil alt</h2>
+        <p>Dette sletter alle øvelser, noter og datoer. Kan ikke fortrydes.</p>
+        <button id="reset-all" class="danger-btn full-width">Nulstil data</button>
+      </div>
+    </section>
+
+    <!-- Calendar / History -->
+    <section id="tab-calendar" class="tab-content">
+      <div class="card">
+        <div class="calendar-header">
+          <button id="calendar-prev" class="icon-btn">◀</button>
+          <div id="calendar-month-label" class="card-title"></div>
+          <button id="calendar-next" class="icon-btn">▶</button>
+        </div>
+        <div id="calendar-grid" class="calendar-grid"></div>
+      </div>
+
+      <!-- Day detail modal -->
+      <div id="day-modal" class="modal" aria-hidden="true">
+        <div class="modal-backdrop" id="modal-backdrop"></div>
+        <div class="modal-content" role="dialog" aria-modal="true">
+          <button id="modal-close" class="icon-btn" title="Luk">✕</button>
+          <h3 id="modal-day-title"></h3>
+          <div id="modal-day-meta" class="card-subtitle"></div>
+          <ul id="modal-exercise-list" class="exercise-list"></ul>
+          <div id="modal-notes" class="card-subtitle" style="margin-top:0.5rem; white-space:pre-wrap"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <small>PPL AB Planner – lokal, ingen backend, data gemmes i din browser.</small>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
