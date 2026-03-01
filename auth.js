@@ -200,7 +200,17 @@ function authIsLoggedIn() {
 
 /* Get current user ID */
 function authGetUserId() {
-  return localStorage.getItem(AUTH_STORAGE_KEYS.USER_ID);
+  const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER_ID);
+  if (stored) return stored;
+
+  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  const decoded = authDecodeUserIdFromJWT(token);
+  if (decoded) {
+    localStorage.setItem(AUTH_STORAGE_KEYS.USER_ID, decoded);
+    return decoded;
+  }
+
+  return null;
 }
 
 /* Sign Out */

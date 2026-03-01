@@ -9,6 +9,46 @@ const SYNC_CONFIG = {
 let syncTimeout = null;
 let syncInProgress = false;
 
+function syncGetCurrentUserId() {
+  let userId = typeof authGetUserId === 'function' ? authGetUserId() : null;
+  if (userId) return userId;
+
+  const token = localStorage.getItem('auth_access_token');
+  if (!token || typeof authDecodeUserIdFromJWT !== 'function') return null;
+
+  userId = authDecodeUserIdFromJWT(token);
+  if (userId) {
+    localStorage.setItem('auth_user_id', userId);
+  }
+  return userId;
+}
+
+function syncBuildLegacyLocalState() {
+  try {
+    const splitOrder = JSON.parse(localStorage.getItem('splitOrder') || 'null');
+    const workouts = JSON.parse(localStorage.getItem('workouts') || 'null');
+    const notes = JSON.parse(localStorage.getItem('notes') || 'null');
+
+    if (!Array.isArray(splitOrder) || !workouts || typeof workouts !== 'object' || !notes || typeof notes !== 'object') {
+      return null;
+    }
+
+    return {
+      splitOrder,
+      workouts,
+      notes,
+      lastPlannedDate: localStorage.getItem('lastPlannedDate') || null,
+      currentDayIndex: parseInt(localStorage.getItem('currentDayIndex') || '0', 10) || 0,
+      completedDays: JSON.parse(localStorage.getItem('completedDays') || '{}'),
+      templates: JSON.parse(localStorage.getItem('templates') || '{}'),
+      appliedTemplates: JSON.parse(localStorage.getItem('appliedTemplates') || '{}'),
+    };
+  } catch (err) {
+    console.error('Failed to build legacy local state snapshot:', err);
+    return null;
+  }
+}
+
 /* Show sync toast notification */
 function showSyncToast(message, type = 'info') {
   let toastContainer = $('sync-toasts');
@@ -39,17 +79,16 @@ function showSyncToast(message, type = 'info') {
 async function syncFetchState() {
   if (!authIsLoggedIn()) return null;
 
-  const userId = authGetUserId();
+  const userId = syncGetCurrentUserId();
   if (!userId) {
-    // Extract from token if needed
-    const token = localStorage.getItem('auth_access_token');
-    if (!token) return null;
+    console.warn('syncFetchState aborted: missing authenticated user id');
+    return null;
   }
 
   try {
     // Get user's row from user_states table
     const res = await authFetch(
-      `/rest/v1/user_states?select=state&limit=1`,
+      `/rest/v1/user_states?select=state&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
       { method: 'GET' }
     );
 
@@ -82,33 +121,26 @@ async function syncSaveState(state, retryCount = 0) {
   syncInProgress = true;
 
   try {
-    const userId = authGetUserId();
+    const userId = syncGetCurrentUserId();
+    if (!userId) {
+      throw new Error('Missing user id for sync');
+    }
 
-    // First try PATCH (update existing)
-    let res = await authFetch(
-      `/rest/v1/user_states?user_id=eq.${userId}`,
+    // Upsert by user_id (create if missing, update if exists)
+    const res = await authFetch(
+      `/rest/v1/user_states?on_conflict=user_id`,
       {
-        method: 'PATCH',
+        method: 'POST',
+        headers: {
+          Prefer: 'resolution=merge-duplicates,return=representation',
+        },
         body: JSON.stringify({
+          user_id: userId,
           state: state,
           updated_at: new Date().toISOString(),
         }),
       }
     );
-
-    // If 404, try POST (create new)
-    if (res.status === 404 || res.status === 406) {
-      res = await authFetch(
-        `/rest/v1/user_states`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            user_id: userId,
-            state: state,
-          }),
-        }
-      );
-    }
 
     if (res.ok) {
       syncInProgress = false;
@@ -256,7 +288,7 @@ async function syncImportState(file) {
 async function syncInit() {
   syncInitializeOfflineDetection();
 
-  if (!authIsLoggedIn()) return;
+  if (!authIsLoggedIn()) return null;
 
   // Fetch user's state from backend
   console.log('Fetching state from backend...');
@@ -267,11 +299,14 @@ async function syncInit() {
     return backendState;
   } else {
     // First time login - might import from localStorage or start fresh
-    const localState = JSON.parse(localStorage.getItem('state') || 'null');
+    const localState = JSON.parse(localStorage.getItem('state') || 'null') || syncBuildLegacyLocalState();
     if (localState) {
       // Migrate localStorage to backend
       console.log('Migrating localStorage state to backend...');
-      await syncSaveState(localState);
+      const migrated = await syncSaveState(localState);
+      if (!migrated) {
+        console.warn('Local state migration failed; using local state for this session');
+      }
       return localState;
     }
   }

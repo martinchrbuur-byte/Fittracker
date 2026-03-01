@@ -96,7 +96,7 @@ The app now uses Supabase for persistent backend storage. All user data is synce
     │
     ├─> syncSaveState()
     │   ├─> Check if online
-    │   ├─> POST/PATCH to /rest/v1/user_states
+    │   ├─> POST UPSERT to /rest/v1/user_states?on_conflict=user_id
     │   ├─> On 401: Try refreshAuthToken()
     │   ├─> On failure: Queue in syncQueueOfflineChange()
     │   └─> Show toast: "Gemt" or "Kunne ikke gemme"
@@ -225,9 +225,8 @@ The app now uses Supabase for persistent backend storage. All user data is synce
 
 | Method | Endpoint | Auth | Body | Response |
 |--------|----------|------|------|----------|
-| GET | `/rest/v1/user_states?select=state&limit=1` | Bearer | — | `[{state: {...}}]` |
-| PATCH | `/rest/v1/user_states?user_id=eq.{id}` | Bearer | `{state, updated_at}` | `[{updated row}]` |
-| POST | `/rest/v1/user_states` | Bearer | `{user_id, state}` | `{id, user_id, state}` |
+| GET | `/rest/v1/user_states?select=state&user_id=eq.{id}&limit=1` | Bearer | — | `[{state: {...}}]` |
+| POST | `/rest/v1/user_states?on_conflict=user_id` | Bearer | `{user_id, state, updated_at}` + `Prefer: resolution=merge-duplicates` | `[{id, user_id, state}]` |
 
 All state endpoints require `Authorization: Bearer {access_token}` header.
 
@@ -289,6 +288,26 @@ TABLE user_states {
 - **HTTPS Only:** All communication encrypted
 - **No Password Storage:** Handled by Supabase Auth
 - **CORS:** Restricted to specific domains (localhost, github.io, etc.)
+- **Localhost Test Mode:** Auth bypass only on `127.0.0.1` / `localhost` for local QA; production still requires login
+
+### RLS SQL (Reference)
+
+```sql
+ALTER TABLE user_states ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read own state" ON user_states
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own state" ON user_states
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own state" ON user_states
+  FOR UPDATE USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own state" ON user_states
+  FOR DELETE USING (auth.uid() = user_id);
+```
 
 ## Error Handling
 
@@ -349,3 +368,12 @@ TABLE user_states {
 | Toast not showing | CSS missing | Ensure Stiles.css includes sync-toast |
 
 See `backend-setup.md` for Supabase setup details.
+
+## Verification Checklist
+
+- [ ] Login as User A, create workouts/notes, refresh browser: data is still present.
+- [ ] Close browser and reopen, login as User A: previous data loads from backend.
+- [ ] Login as User B in a clean session: User A data is not visible.
+- [ ] Modify data while offline, reconnect: queued changes sync and persist.
+- [ ] Trigger token refresh path (or wait expiry): app refreshes token and continues syncing.
+- [ ] Open/close modals and switch tabs after re-render: buttons and handlers still work.

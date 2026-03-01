@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS user_states (
   id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   state JSONB NOT NULL DEFAULT '{}',
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() ON UPDATE NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
   UNIQUE(user_id)
 );
 
@@ -136,21 +136,16 @@ All endpoints require the `Authorization: Bearer {token}` header (except auth en
 ### State Management
 
 **Fetch State (GET)**
-- **GET** `/rest/v1/user_states?user_id=eq.{userId}`
+- **GET** `/rest/v1/user_states?select=state&user_id=eq.{userId}&limit=1`
 - Authorization: Bearer token required
 - Returns: `[{ "id": 1, "user_id": "...", "state": {...}, "updated_at": "..." }]`
 
-**Create/Get User State (POST)**
-- **POST** `/rest/v1/user_states`
-- Body: `{ "user_id": "{userId}", "state": {...} }`
+**Create/Update User State (UPSERT)**
+- **POST** `/rest/v1/user_states?on_conflict=user_id`
+- Headers: `Prefer: resolution=merge-duplicates,return=representation`
+- Body: `{ "user_id": "{userId}", "state": {...}, "updated_at": "2026-03-01T12:00:00Z" }`
 - Authorization: Bearer token required
-- Returns: `{ "id": 1, "user_id": "...", "state": {...} }`
-
-**Update State (PATCH)**
-- **PATCH** `/rest/v1/user_states?user_id=eq.{userId}`
-- Body: `{ "state": {...}, "updated_at": "now()" }`
-- Authorization: Bearer token required
-- Returns: Updated record
+- Returns: `[{ "id": 1, "user_id": "...", "state": {...} }]`
 
 ---
 
