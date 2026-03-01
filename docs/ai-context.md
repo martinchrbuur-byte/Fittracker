@@ -26,6 +26,14 @@ npm start
 
 - Verify the changed flow in app UI (for catalog work: open “Tilføj øvelse fra katalog” and confirm `Muskler` + `Udstyr` filters are selectable).
 
+### Optional: npm deploy helpers
+
+```powershell
+npm run deploy:check
+npm run deploy:push
+npm run deploy:verify
+```
+
 ### 2) Deploy frontend (GitHub Pages via main branch)
 
 ```powershell
