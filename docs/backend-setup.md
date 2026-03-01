@@ -83,6 +83,30 @@ CREATE POLICY "Users can delete own state" ON user_states
    - Confirm email: OFF (for testing; enable for production)
    - Auto confirm: ON (users don't need email verification)
 
+## Step 4b: Configure Admin Role
+
+The Admin tab is shown only when both of these are true:
+- User email is `martin.chr.buur@gmail.com`
+- User has role `admin` in Supabase user metadata
+
+Run this in **SQL Editor** after the account exists:
+
+```sql
+-- Grant admin role to Martin account via app_metadata
+update auth.users
+set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"admin"}'::jsonb
+where lower(email) = 'martin.chr.buur@gmail.com';
+
+-- Verify admin role assignment
+select
+  email,
+  raw_app_meta_data
+from auth.users
+where lower(email) = 'martin.chr.buur@gmail.com';
+```
+
+After running this, log out and log in again in the app to refresh claims/profile.
+
 ## Step 5: Configure CORS (if needed)
 
 Supabase CORS is already configured for localhost and GitHub Pages domains.
