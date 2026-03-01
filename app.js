@@ -17,7 +17,7 @@ function load(stateObj){try{let f,r=localStorage;
  if(!s.a||typeof s.a!="object")s.a={};
  save();}catch(e){init();}}
 function init(){s={split:D.slice(),w:{},n:{},last:null,ci:0,cd:{},t:{...T0},a:{}};save();}
-function save(){let r=localStorage;r.setItem("workouts",JSON.stringify(s.w));r.setItem("splitOrder",JSON.stringify(s.split));r.setItem("notes",JSON.stringify(s.n));r.setItem("lastPlannedDate",s.last||"");r.setItem("currentDayIndex",String(s.ci));r.setItem("completedDays",JSON.stringify(s.cd||{}));r.setItem("templates",JSON.stringify(s.t||{}));r.setItem("appliedTemplates",JSON.stringify(s.a||{}));if(typeof syncStateDebounced==='function'){syncStateDebounced(s);}}
+function save(){let r=localStorage;r.setItem("workouts",JSON.stringify(s.w));r.setItem("splitOrder",JSON.stringify(s.split));r.setItem("notes",JSON.stringify(s.n));r.setItem("lastPlannedDate",s.last||"");r.setItem("currentDayIndex",String(s.ci));r.setItem("completedDays",JSON.stringify(s.cd||{}));r.setItem("templates",JSON.stringify(s.t||{}));r.setItem("appliedTemplates",JSON.stringify(s.a||{}));let canSync=typeof syncStateDebounced==='function'&&typeof authIsLoggedIn==='function'&&authIsLoggedIn();if(canSync){syncStateDebounced(s);}}
 function iso(d){let y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),dd=String(d.getDate()).padStart(2,"0");return`${y}-${m}-${dd}`;}
 function fromIso(i){return new Date(i+"T00:00:00");}
 function diff(a,b){return Math.floor((fromIso(b)-fromIso(a))/(864e5));}
@@ -46,8 +46,8 @@ function wireStaticHandlers(){
 	bindOnce($("prev-day"),'PrevDay','click',()=>{s.ci=(s.ci-1+s.split.length)%s.split.length;save();rToday();});
 	bindOnce($("next-day"),'NextDay','click',()=>{s.ci=(s.ci+1)%s.split.length;save();rToday();});
 	bindOnce($("mark-today"),'MarkToday','click',mark);
-	bindOnce($("export-json"),'ExportJson','click',()=>{if(typeof syncExportState==='function')syncExportState(s);else exportJson();});
-	bindOnce($("import-file"),'ImportFile','change',e=>{let f=e.target.files&&e.target.files[0];if(!f)return;if(typeof syncImportState==='function'){syncImportState(f).then(()=>{if(typeof initApp==='function')initApp();});}else{importJson(f);}e.target.value="";});
+	bindOnce($("export-json"),'ExportJson','click',()=>{let canSync=typeof authIsLoggedIn==='function'&&authIsLoggedIn();if(canSync&&typeof syncExportState==='function')syncExportState(s);else exportJson();});
+	bindOnce($("import-file"),'ImportFile','change',e=>{let f=e.target.files&&e.target.files[0];if(!f)return;let canSync=typeof authIsLoggedIn==='function'&&authIsLoggedIn();if(canSync&&typeof syncImportState==='function'){syncImportState(f).then(()=>{if(typeof initApp==='function')initApp();});}else{importJson(f);}e.target.value="";});
 	bindOnce($("reset-all"),'ResetAll','click',resetAll);
 	bindOnce($("calendar-prev"),'CalendarPrev','click',()=>{let d=new Date(cur);d.setMonth(d.getMonth()-1);rCal(d);});
 	bindOnce($("calendar-next"),'CalendarNext','click',()=>{let d=new Date(cur);d.setMonth(d.getMonth()+1);rCal(d);});

@@ -12,6 +12,15 @@ const AUTH_STORAGE_KEYS = {
   USER_ID: 'auth_user_id',
 };
 
+function authIsLocalDevBypassEnabled() {
+  try {
+    const host = window.location && window.location.hostname;
+    return host === '127.0.0.1' || host === 'localhost';
+  } catch {
+    return false;
+  }
+}
+
 /* Utility: Make authenticated API calls */
 async function authFetch(endpoint, options = {}) {
   const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
@@ -442,6 +451,17 @@ function showAuthModal(mode = 'login') {
 
 /* Initialize Auth (check if logged in, show modal if not) */
 async function authInit() {
+  if (authIsLocalDevBypassEnabled()) {
+    console.warn('[auth] Local development mode detected - bypassing auth');
+    closeMod('login-modal');
+    closeMod('signup-modal');
+    const signupBtn = $('signup-btn');
+    const logoutBtn = $('logout-btn');
+    if (signupBtn) signupBtn.style.display = 'none';
+    if (logoutBtn) logoutBtn.style.display = 'none';
+    return true;
+  }
+
   // Try to refresh token on page load
   if (localStorage.getItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN)) {
     await refreshAuthToken();
