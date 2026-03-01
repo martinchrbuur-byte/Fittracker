@@ -53,8 +53,11 @@ function syncBuildLegacyLocalState() {
       lastPlannedDate: localStorage.getItem('lastPlannedDate') || null,
       currentDayIndex: parseInt(localStorage.getItem('currentDayIndex') || '0', 10) || 0,
       completedDays: JSON.parse(localStorage.getItem('completedDays') || '{}'),
+      workoutDayLogs: JSON.parse(localStorage.getItem('workoutDayLogs') || '{}'),
       templates: JSON.parse(localStorage.getItem('templates') || '{}'),
       appliedTemplates: JSON.parse(localStorage.getItem('appliedTemplates') || '{}'),
+      progressionGoals: JSON.parse(localStorage.getItem('progressionGoals') || '{}'),
+      stateMeta: JSON.parse(localStorage.getItem('stateMeta') || '{"schemaVersion":2,"statsLastComputedAt":null}'),
     };
   } catch (err) {
     console.error('Failed to build legacy local state snapshot:', err);
