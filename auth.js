@@ -169,8 +169,13 @@ function authGetUserEmail() {
 }
 
 function authIsAdminAuthorized() {
-  const email = (authGetUserEmail() || '').toLowerCase();
-  if (email !== AUTH_ADMIN_EMAIL) return false;
+  const email = (authGetUserEmail() || '').trim().toLowerCase();
+  if (!email) return false;
+
+  if (email === AUTH_ADMIN_EMAIL) {
+    return true;
+  }
+
   const profile = authGetStoredUserProfile();
   if (!profile) return false;
   const roles = authExtractRoles(profile);

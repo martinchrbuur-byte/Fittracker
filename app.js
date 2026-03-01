@@ -398,7 +398,7 @@ function setupTabs(){
 	bs.forEach(b=>{
 		if(b.dataset.boundClick==='1')return;
 		b.dataset.boundClick='1';
-		b.addEventListener("click",()=>{let t=b.dataset.tab;let tabEl=$("tab-"+t);if(!tabEl){console.warn(`[setupTabs] Missing tab container: tab-${t}`);return;}if(t==='admin'&&!adminCanAccess()){showSyncToast('Admin-adgang kræver server-rolle','warning');return;}activateTab(t);setActiveTab(t);});
+		b.addEventListener("click",()=>{let t=b.dataset.tab;let tabEl=$("tab-"+t);if(!tabEl){console.warn(`[setupTabs] Missing tab container: tab-${t}`);return;}if(t==='admin'&&!adminCanAccess()){showSyncToast('Ingen admin-adgang for denne konto','warning');return;}activateTab(t);setActiveTab(t);});
 	});
 }
 function ensureModalShell(id,onClose){let existing=$(id);if(existing)return existing;let m=C('div');m.id=id;m.className='modal';m.setAttribute('aria-hidden','true');let bd=C('div','modal-backdrop');bd.addEventListener('click',onClose);m.appendChild(bd);let mc=C('div','modal-content');mc.setAttribute('role','dialog');mc.setAttribute('aria-modal','true');let cb=C('button','icon-btn');cb.textContent='✕';cb.title='Luk';cb.addEventListener('click',onClose);mc.appendChild(cb);m.appendChild(mc);document.body.appendChild(m);return m;}

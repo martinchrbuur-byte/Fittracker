@@ -6,10 +6,11 @@
   "scripts": {
     "start": "electron .",
     "package-win": "electron-packager . \"PPL AB Planner\" --platform=win32 --arch=x64 --out=dist --overwrite",
-    "deploy:check": "git status --short && git branch --show-current && git remote -v",
-    "deploy:push": "git push origin main",
-    "deploy:verify": "git rev-parse --short HEAD && git status --short",
-    "deploy": "npm run deploy:check && npm run deploy:push && npm run deploy:verify"
+    "build:pages": "node scripts/build-pages.mjs",
+    "deploy:preflight": "node scripts/deploy-preflight.mjs",
+    "deploy:prepare": "npm run deploy:preflight && npm run build:pages",
+    "deploy:push": "node scripts/deploy-push.mjs",
+    "deploy": "npm run deploy:prepare && npm run deploy:push"
   },
   "author": "",
   "license": "MIT",
