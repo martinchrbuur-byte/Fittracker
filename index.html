@@ -19,7 +19,6 @@
   <nav class="tabs">
     <button class="tab-button active" data-tab="today">I dag</button>
     <button class="tab-button" data-tab="plan">Plan</button>
-    <button class="tab-button" data-tab="data">Data</button>
     <button class="tab-button" data-tab="calendar">Kalender</button>
   </nav>
 
@@ -52,27 +51,6 @@
       </p>
       <div id="template-manager"></div>
       <div id="plan-accordion" class="accordion"></div>
-    </section>
-
-    <!-- Data -->
-    <section id="tab-data" class="tab-content">
-      <div class="card">
-        <h2>Eksport</h2>
-        <p>Download alle data som en JSON-fil.</p>
-        <button id="export-json" class="primary-btn full-width">Eksportér JSON</button>
-      </div>
-
-      <div class="card">
-        <h2>Import</h2>
-        <p>Vælg en tidligere eksporteret JSON-fil for at genskabe state.</p>
-        <input type="file" id="import-file" accept="application/json" />
-      </div>
-
-      <div class="card danger">
-        <h2>Nulstil alt</h2>
-        <p>Dette sletter alle øvelser, noter og datoer. Kan ikke fortrydes.</p>
-        <button id="reset-all" class="danger-btn full-width">Nulstil data</button>
-      </div>
     </section>
 
     <!-- Calendar / History -->

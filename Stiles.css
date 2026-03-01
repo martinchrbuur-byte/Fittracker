@@ -367,12 +367,6 @@ main {
   resize: vertical;
 }
 
-/* Data tab */
-.card.danger {
-  border-color: #fecaca;
-  background: #fef2f2;
-}
-
 /* Footer */
 .app-footer {
   padding: 0.5rem 0.75rem 0.75rem;
