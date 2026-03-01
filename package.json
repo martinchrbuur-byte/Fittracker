@@ -8,7 +8,8 @@
     "package-win": "electron-packager . \"PPL AB Planner\" --platform=win32 --arch=x64 --out=dist --overwrite",
     "deploy:check": "git status --short && git branch --show-current && git remote -v",
     "deploy:push": "git push origin main",
-    "deploy:verify": "git rev-parse --short HEAD && git status --short"
+    "deploy:verify": "git rev-parse --short HEAD && git status --short",
+    "deploy": "npm run deploy:check && npm run deploy:push && npm run deploy:verify"
   },
   "author": "",
   "license": "MIT",

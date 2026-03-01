@@ -32,7 +32,10 @@ npm start
 npm run deploy:check
 npm run deploy:push
 npm run deploy:verify
+npm run deploy
 ```
+
+- `npm run deploy` runs check → push → verify in one command.
 
 ### 2) Deploy frontend (GitHub Pages via main branch)
 
