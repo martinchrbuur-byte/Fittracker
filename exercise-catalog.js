@@ -10,6 +10,7 @@
       ? `${configuredSupabaseUrl}${String(configuredProxyBase).startsWith('/') ? '' : '/'}${configuredProxyBase}`.replace(/\/$/, '')
       : String(configuredProxyBase).replace(/\/$/, '');
   const FORCE_PROXY = APP_CONFIG.EXERCISEDB_FORCE_PROXY === true;
+  const DISABLE_PROXY = APP_CONFIG.EXERCISEDB_DISABLE_PROXY === true;
 
   window.__catalogRouteMode = 'unknown';
 
@@ -86,6 +87,12 @@
     const proxyUrl = `${PROXY_BASE}${path}${query}`;
     const directUrl = `${DIRECT_BASE}${path}${query}`;
 
+    if (DISABLE_PROXY) {
+      const payload = await tryFetch(directUrl);
+      window.__catalogRouteMode = 'direct';
+      return payload;
+    }
+
     if (FORCE_PROXY) {
       try {
         const payload = await tryFetch(proxyUrl);
@@ -151,6 +158,25 @@
 
   async function getMeta(){
     if(metaCache) return metaCache;
+    if(DISABLE_PROXY){
+      try {
+        const [bodyPartsPayload, musclesPayload, equipmentsPayload] = await Promise.all([
+          tryFetch(`${DIRECT_BASE}/bodyparts`),
+          tryFetch(`${DIRECT_BASE}/muscles`),
+          tryFetch(`${DIRECT_BASE}/equipments`),
+        ]);
+
+        window.__catalogRouteMode = 'direct';
+        metaCache = {
+          bodyParts: normalizeMetaList(bodyPartsPayload?.data || bodyPartsPayload),
+          muscles: normalizeMetaList(musclesPayload?.data || musclesPayload),
+          equipments: normalizeMetaList(equipmentsPayload?.data || equipmentsPayload),
+        };
+      } catch {
+        metaCache = { bodyParts: [], muscles: [], equipments: [] };
+      }
+      return metaCache;
+    }
     try {
       const payload = await tryFetch(`${PROXY_BASE}/meta`);
       window.__catalogRouteMode = 'proxy';
