@@ -197,6 +197,13 @@ async function authListRegisteredUsers() {
     });
 
     if (!res.ok) {
+      if (res.status === 404) {
+        return {
+          success: false,
+          error: 'RPC admin_list_registered_users mangler i Supabase (SQL skal køres i backend-setup).',
+          users: [],
+        };
+      }
       const message = await authReadError(
         res,
         'Kunne ikke hente registrerede brugere. Opret RPC funktionen admin_list_registered_users i Supabase.'
