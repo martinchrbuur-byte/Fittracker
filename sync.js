@@ -9,6 +9,19 @@ const SYNC_CONFIG = {
 let syncTimeout = null;
 let syncInProgress = false;
 
+function syncSetDebugStatus(status, message) {
+  const payload = {
+    status,
+    message: message || '',
+    at: new Date().toISOString(),
+  };
+
+  window.__syncDebugStatus = payload;
+  try {
+    window.dispatchEvent(new CustomEvent('sync-status', { detail: payload }));
+  } catch {}
+}
+
 function syncGetCurrentUserId() {
   let userId = typeof authGetUserId === 'function' ? authGetUserId() : null;
   if (userId) return userId;
@@ -86,6 +99,7 @@ async function syncFetchState() {
   }
 
   try {
+    syncSetDebugStatus('fetching', 'Henter state fra backend');
     // Get user's row from user_states table
     const res = await authFetch(
       `/rest/v1/user_states?select=state&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
@@ -94,6 +108,7 @@ async function syncFetchState() {
 
     if (!res.ok) {
       console.error('Fetch state failed:', res.status);
+      syncSetDebugStatus('fetch_error', `Fetch fejlede (${res.status})`);
       return null;
     }
 
@@ -101,12 +116,15 @@ async function syncFetchState() {
     if (rows && rows[0] && rows[0].state) {
       // Cache in localStorage
       localStorage.setItem('_sync_cache', JSON.stringify(rows[0].state));
+      syncSetDebugStatus('fetched', 'State hentet');
       return rows[0].state;
     }
 
+    syncSetDebugStatus('empty', 'Ingen backend-state fundet');
     return null;
   } catch (err) {
     console.error('Fetch state error:', err);
+    syncSetDebugStatus('fetch_error', 'Fejl under state-fetch');
     return null;
   }
 }
@@ -115,12 +133,14 @@ async function syncFetchState() {
 async function syncSaveState(state, retryCount = 0) {
   if (!authIsLoggedIn()) {
     showSyncToast('Ikke logget ind - kan ikke gemme', 'error');
+    syncSetDebugStatus('skipped', 'Ikke logget ind');
     return false;
   }
 
   syncInProgress = true;
 
   try {
+    syncSetDebugStatus('saving', 'Gemmer til backend');
     const userId = syncGetCurrentUserId();
     if (!userId) {
       throw new Error('Missing user id for sync');
@@ -145,6 +165,7 @@ async function syncSaveState(state, retryCount = 0) {
     if (res.ok) {
       syncInProgress = false;
       showSyncToast('Gemt', 'success');
+      syncSetDebugStatus('saved', 'Backend sync lykkedes');
       // Clear offline queue
       await syncClearOfflineQueue();
       return true;
@@ -155,12 +176,14 @@ async function syncSaveState(state, retryCount = 0) {
     console.error('Sync save error:', err);
 
     if (retryCount < SYNC_CONFIG.MAX_RETRIES) {
+      syncSetDebugStatus('retrying', `Retry ${retryCount + 1}/${SYNC_CONFIG.MAX_RETRIES}`);
       // Retry with exponential backoff
       await new Promise(resolve => setTimeout(resolve, SYNC_CONFIG.RETRY_DELAY_MS * (retryCount + 1)));
       return syncSaveState(state, retryCount + 1);
     } else {
       syncInProgress = false;
       showSyncToast('Kunne ikke gemme - prøver igen senere', 'error');
+      syncSetDebugStatus('queued', 'Gemning fejlede, state queued offline');
       // Queue for retry
       await syncQueueOfflineChange(state);
       return false;
@@ -175,6 +198,7 @@ function syncStateDebounced(state) {
   }
 
   showSyncToast('Gemmer...', 'info');
+  syncSetDebugStatus('pending', `Debounce ${SYNC_CONFIG.DEBOUNCE_MS}ms`);
 
   syncTimeout = setTimeout(() => {
     syncSaveState(state);
@@ -207,6 +231,7 @@ async function syncProcessOfflineQueue() {
     if (queue.length === 0) return;
 
     console.log(`Processing ${queue.length} queued changes...`);
+    syncSetDebugStatus('processing_queue', `Behandler ${queue.length} queued ændringer`);
 
     // Process all queued states (last one wins)
     const lastState = queue[queue.length - 1].state;
@@ -224,12 +249,14 @@ async function syncProcessOfflineQueue() {
 function syncInitializeOfflineDetection() {
   window.addEventListener('online', () => {
     console.log('Back online - syncing queued changes');
+    syncSetDebugStatus('online', 'Online igen');
     syncProcessOfflineQueue();
   });
 
   window.addEventListener('offline', () => {
     console.log('Offline - changes will be queued');
     showSyncToast('Offline - ændringer gemmes lokalt', 'warning');
+    syncSetDebugStatus('offline', 'Offline - gemmer lokalt');
   });
 }
 
@@ -287,6 +314,7 @@ async function syncImportState(file) {
 /* Initialize sync on page load */
 async function syncInit() {
   syncInitializeOfflineDetection();
+  syncSetDebugStatus('init', 'Sync init');
 
   if (!authIsLoggedIn()) return null;
 
