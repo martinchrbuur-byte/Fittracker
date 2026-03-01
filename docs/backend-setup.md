@@ -107,6 +107,49 @@ where lower(email) = 'martin.chr.buur@gmail.com';
 
 After running this, log out and log in again in the app to refresh claims/profile.
 
+## Step 4c: Enable Admin User List RPC
+
+For the Admin tab to show registered usernames, add this RPC in **SQL Editor**:
+
+```sql
+create or replace function public.admin_list_registered_users()
+returns table (
+  user_id uuid,
+  email text,
+  username text
+)
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  caller_email text := lower(coalesce((auth.jwt() ->> 'email'), ''));
+  caller_role text := lower(coalesce((auth.jwt() -> 'app_metadata' ->> 'role'), ''));
+begin
+  if caller_email <> 'martin.chr.buur@gmail.com' and caller_role <> 'admin' then
+    raise exception 'Not authorized';
+  end if;
+
+  return query
+  select
+    u.id as user_id,
+    u.email,
+    coalesce(
+      nullif(trim(u.raw_user_meta_data ->> 'username'), ''),
+      nullif(trim(u.raw_user_meta_data ->> 'name'), ''),
+      split_part(coalesce(u.email, ''), '@', 1)
+    ) as username
+  from auth.users u
+  where u.email is not null
+  order by u.created_at desc;
+end;
+$$;
+
+grant execute on function public.admin_list_registered_users() to authenticated;
+```
+
+This function is called by the Admin tab via `/rest/v1/rpc/admin_list_registered_users`.
+
 ## Step 5: Configure CORS (if needed)
 
 Supabase CORS is already configured for localhost and GitHub Pages domains.

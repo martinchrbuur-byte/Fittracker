@@ -182,6 +182,65 @@ function authIsAdminAuthorized() {
   return roles.includes('admin');
 }
 
+async function authListRegisteredUsers() {
+  if (!authIsLoggedIn()) {
+    return { success: false, error: 'Ikke logget ind', users: [] };
+  }
+  if (!authIsAdminAuthorized()) {
+    return { success: false, error: 'Ingen admin-adgang', users: [] };
+  }
+
+  try {
+    const res = await authFetch('/rest/v1/rpc/admin_list_registered_users', {
+      method: 'POST',
+      body: JSON.stringify({}),
+    });
+
+    if (!res.ok) {
+      const message = await authReadError(
+        res,
+        'Kunne ikke hente registrerede brugere. Opret RPC funktionen admin_list_registered_users i Supabase.'
+      );
+      return { success: false, error: message, users: [] };
+    }
+
+    const payload = await res.json();
+    const rows = Array.isArray(payload) ? payload : [];
+    const users = rows.map((row, index) => {
+      const email =
+        row && typeof row.email === 'string' && row.email.trim()
+          ? row.email.trim()
+          : row && typeof row.user_email === 'string' && row.user_email.trim()
+            ? row.user_email.trim()
+            : '';
+      const username =
+        row && typeof row.username === 'string' && row.username.trim()
+          ? row.username.trim()
+          : row && typeof row.display_name === 'string' && row.display_name.trim()
+            ? row.display_name.trim()
+            : row && typeof row.name === 'string' && row.name.trim()
+              ? row.name.trim()
+              : '';
+      const id = row && typeof row.user_id === 'string' ? row.user_id : '';
+      return {
+        id,
+        email,
+        username: username || email || `Bruger ${index + 1}`,
+      };
+    });
+
+    return { success: true, users };
+  } catch (err) {
+    return {
+      success: false,
+      error:
+        (err && err.message) ||
+        'Kunne ikke hente registrerede brugere',
+      users: [],
+    };
+  }
+}
+
 /* Sign Up */
 async function authSignup(email, password) {
   try {
