@@ -8,6 +8,30 @@
 
   let metaCache = null;
 
+  function normalizeMetaList(items){
+    if(!Array.isArray(items)) return [];
+    return items
+      .map((item)=>{
+        if(typeof item === 'string'){
+          const name = item.trim();
+          return name ? { name } : null;
+        }
+        if(item && typeof item === 'object'){
+          const name = String(item.name || item.value || item.label || '').trim();
+          return name ? { ...item, name } : null;
+        }
+        return null;
+      })
+      .filter(Boolean);
+  }
+
+  function normalizeMetaPayload(payload){
+    const bodyParts = normalizeMetaList(payload?.bodyParts || payload?.bodyparts || payload?.bodyPart || payload?.bodypart);
+    const muscles = normalizeMetaList(payload?.muscles || payload?.targetMuscles || payload?.targets || payload?.muscle);
+    const equipments = normalizeMetaList(payload?.equipments || payload?.equipment || payload?.equipmentTypes);
+    return { bodyParts, muscles, equipments };
+  }
+
   function toQuery(params){
     const search = new URLSearchParams();
     Object.entries(params || {}).forEach(([key,value])=>{
@@ -116,14 +140,39 @@
     if(metaCache) return metaCache;
     try {
       const payload = await proxyOrDirect('/meta', {});
+      metaCache = normalizeMetaPayload(payload);
+      if(metaCache.bodyParts.length || metaCache.muscles.length || metaCache.equipments.length){
+        return metaCache;
+      }
+
+      const [bodyPartsPayload, musclesPayload, equipmentsPayload] = await Promise.all([
+        tryFetch(`${DIRECT_BASE}/bodyparts`),
+        tryFetch(`${DIRECT_BASE}/muscles`),
+        tryFetch(`${DIRECT_BASE}/equipments`),
+      ]);
+
       metaCache = {
-        bodyParts: Array.isArray(payload.bodyParts) ? payload.bodyParts : [],
-        muscles: Array.isArray(payload.muscles) ? payload.muscles : [],
-        equipments: Array.isArray(payload.equipments) ? payload.equipments : [],
+        bodyParts: normalizeMetaList(bodyPartsPayload?.data || bodyPartsPayload),
+        muscles: normalizeMetaList(musclesPayload?.data || musclesPayload),
+        equipments: normalizeMetaList(equipmentsPayload?.data || equipmentsPayload),
       };
       return metaCache;
     } catch {
-      metaCache = { bodyParts: [], muscles: [], equipments: [] };
+      try {
+        const [bodyPartsPayload, musclesPayload, equipmentsPayload] = await Promise.all([
+          tryFetch(`${DIRECT_BASE}/bodyparts`),
+          tryFetch(`${DIRECT_BASE}/muscles`),
+          tryFetch(`${DIRECT_BASE}/equipments`),
+        ]);
+
+        metaCache = {
+          bodyParts: normalizeMetaList(bodyPartsPayload?.data || bodyPartsPayload),
+          muscles: normalizeMetaList(musclesPayload?.data || musclesPayload),
+          equipments: normalizeMetaList(equipmentsPayload?.data || equipmentsPayload),
+        };
+      } catch {
+        metaCache = { bodyParts: [], muscles: [], equipments: [] };
+      }
       return metaCache;
     }
   }
