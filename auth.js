@@ -234,7 +234,7 @@ function createAuthModals() {
     let signupBtn = C('button', 'primary-btn');
     signupBtn.textContent = 'Opret';
     signupBtn.addEventListener('click', async () => {
-      const email = $(​'signup-email').value.trim();
+      const email = $('signup-email').value.trim();
       const password = $('signup-password').value;
       
       if (!email || !password) {
