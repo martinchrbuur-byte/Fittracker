@@ -1,6 +1,10 @@
 (function(){
   const DIRECT_BASE = 'https://www.exercisedb.dev/api/v1';
-  const PROXY_BASE = '/functions/v1/exercisedb-proxy';
+  const APP_CONFIG = window.__APP_CONFIG || {};
+  const PROXY_BASE = (APP_CONFIG.EXERCISEDB_PROXY_BASE || '/functions/v1/exercisedb-proxy').replace(/\/$/, '');
+  const FORCE_PROXY = APP_CONFIG.EXERCISEDB_FORCE_PROXY === true;
+
+  window.__catalogRouteMode = 'unknown';
 
   let metaCache = null;
 
@@ -37,10 +41,23 @@
 
   async function proxyOrDirect(path, params){
     const query = toQuery(params);
+    const proxyUrl = `${PROXY_BASE}${path}${query}`;
+    const directUrl = `${DIRECT_BASE}${path}${query}`;
+
+    if (FORCE_PROXY) {
+      const payload = await tryFetch(proxyUrl);
+      window.__catalogRouteMode = 'proxy';
+      return payload;
+    }
+
     try {
-      return await tryFetch(`${PROXY_BASE}${path}${query}`);
+      const payload = await tryFetch(proxyUrl);
+      window.__catalogRouteMode = 'proxy';
+      return payload;
     } catch {
-      return await tryFetch(`${DIRECT_BASE}${path}${query}`);
+      const payload = await tryFetch(directUrl);
+      window.__catalogRouteMode = 'direct';
+      return payload;
     }
   }
 
