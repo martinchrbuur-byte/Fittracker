@@ -17,10 +17,13 @@ async function authFetch(endpoint, options = {}) {
   const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
   const headers = {
     'Content-Type': 'application/json',
+    apikey: AUTH_CONFIG.SUPABASE_ANON_KEY,
     ...options.headers,
   };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+  } else {
+    headers['Authorization'] = `Bearer ${AUTH_CONFIG.SUPABASE_ANON_KEY}`;
   }
 
   const response = await fetch(`${AUTH_CONFIG.SUPABASE_URL}${endpoint}`, {
@@ -42,6 +45,32 @@ async function authFetch(endpoint, options = {}) {
   return response;
 }
 
+async function authReadError(response, fallbackMessage) {
+  try {
+    const err = await response.json();
+    return (
+      err.error_description ||
+      err.msg ||
+      err.message ||
+      fallbackMessage
+    );
+  } catch {
+    return fallbackMessage;
+  }
+}
+
+function authDecodeUserIdFromJWT(token) {
+  if (!token || typeof token !== 'string') return null;
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return payload.sub || payload.user_id || null;
+  } catch {
+    return null;
+  }
+}
+
 /* Sign Up */
 async function authSignup(email, password) {
   try {
@@ -50,21 +79,29 @@ async function authSignup(email, password) {
       headers: {
         'Content-Type': 'application/json',
         apikey: AUTH_CONFIG.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${AUTH_CONFIG.SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({ email, password }),
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.message || 'Signup failed');
+      const message = await authReadError(res, 'Signup failed');
+      throw new Error(message);
     }
 
     const data = await res.json();
     if (data.session) {
-      authStoreSession(data.session, data.user.id);
+      authStoreSession(data.session, data.user && data.user.id ? data.user.id : null);
       return { success: true, user: data.user };
+    } else if (data.user) {
+      return {
+        success: true,
+        requiresEmailConfirmation: true,
+        message: 'Konto oprettet. Bekræft din email før login.',
+        user: data.user,
+      };
     } else {
-      throw new Error('No session returned');
+      throw new Error('Signup completed without a valid session/user response');
     }
   } catch (err) {
     return { success: false, error: err.message };
@@ -79,17 +116,21 @@ async function authSignin(email, password) {
       headers: {
         'Content-Type': 'application/json',
         apikey: AUTH_CONFIG.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${AUTH_CONFIG.SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({ email, password }),
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.error_description || err.message || 'Login failed');
+      const message = await authReadError(res, 'Login failed');
+      throw new Error(message);
     }
 
     const data = await res.json();
-    authStoreSession(data, null); // Extract user_id from JWT if needed
+    const userId =
+      (data.user && data.user.id) ||
+      authDecodeUserIdFromJWT(data.access_token);
+    authStoreSession(data, userId);
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -107,6 +148,7 @@ async function refreshAuthToken() {
       headers: {
         'Content-Type': 'application/json',
         apikey: AUTH_CONFIG.SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${AUTH_CONFIG.SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify({ refresh_token: refreshToken }),
     });
@@ -117,7 +159,10 @@ async function refreshAuthToken() {
     }
 
     const data = await res.json();
-    authStoreSession(data, null);
+    const userId =
+      (data.user && data.user.id) ||
+      authDecodeUserIdFromJWT(data.access_token);
+    authStoreSession(data, userId);
     return true;
   } catch (err) {
     console.error('Token refresh failed:', err);
@@ -128,8 +173,12 @@ async function refreshAuthToken() {
 
 /* Store session tokens */
 function authStoreSession(session, userId) {
-  localStorage.setItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN, session.access_token);
-  localStorage.setItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN, session.refresh_token);
+  if (session && session.access_token) {
+    localStorage.setItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN, session.access_token);
+  }
+  if (session && session.refresh_token) {
+    localStorage.setItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN, session.refresh_token);
+  }
   if (userId) {
     localStorage.setItem(AUTH_STORAGE_KEYS.USER_ID, userId);
   }
@@ -249,10 +298,18 @@ function createAuthModals() {
       const result = await authSignup(email, password);
       
       if (result.success) {
+        if (result.requiresEmailConfirmation) {
+          $('signup-error').style.color = '#16a34a';
+          $('signup-error').textContent = result.message || 'Konto oprettet. Bekræft din email før login.';
+          $('signup-error').style.display = 'block';
+          signupBtn.disabled = false;
+          signupBtn.textContent = 'Opret';
+          return;
+        }
         closeMod('signup-modal');
-        // Reinitialize app
         if (typeof initApp === 'function') initApp();
       } else {
+        $('signup-error').style.color = '#dc2626';
         $('signup-error').textContent = result.error || 'Signup mislykkedes';
         $('signup-error').style.display = 'block';
         signupBtn.disabled = false;
