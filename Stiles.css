@@ -239,7 +239,8 @@ main {
 }
 
 .exercise-expand-btn {
-  min-width: 32px;
+  min-width: 44px;
+  min-height: 44px;
 }
 
 .exercise-remove-btn {
@@ -309,8 +310,8 @@ main {
 }
 
 .compact-btn {
-  padding: 0.4rem 0.55rem;
-  min-height: 36px;
+  padding: 0.45rem 0.65rem;
+  min-height: 44px;
 }
 
 .stepper-group {
@@ -345,8 +346,19 @@ main {
 
 .stepper-btn {
   border-radius: 0;
-  min-height: 36px;
+  min-height: 44px;
+  min-width: 44px;
   padding: 0.35rem 0.55rem;
+}
+
+.quick-adjust-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.quick-adjust-btn {
+  min-width: 46px;
 }
 
 .info-chips {
@@ -379,9 +391,9 @@ main {
   background: transparent;
   cursor: pointer;
   font-size: 1rem;
-  padding: 0.35rem;
-  min-height: 36px;
-  min-width: 36px;
+  padding: 0.45rem;
+  min-height: 44px;
+  min-width: 44px;
   color: #6b7280;
 }
 
@@ -538,6 +550,20 @@ main {
   .card,
   .exercise-item {
     padding: 0.7rem;
+  }
+
+  .exercise-progress-controls {
+    gap: 0.45rem;
+  }
+
+  .stepper-group .exercise-progress-input {
+    width: 58px;
+  }
+
+  .quick-adjust-btn {
+    min-width: 44px;
+    padding-left: 0.45rem;
+    padding-right: 0.45rem;
   }
 }
 
