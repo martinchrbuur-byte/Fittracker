@@ -369,19 +369,38 @@ trendWrap.style.margin='0.35rem 0 0';
 let outcomes=hist.slice(-4).map(x=>x.log).reduce((acc,log,idx,arr)=>{if(idx===0)return acc;let prev=arr[idx-1];let st=metricsDeltaStatus(getExerciseLogMetric(log,goal.primaryMetric),getExerciseLogMetric(prev,goal.primaryMetric),0.1);acc.push(st==='up'?'↑':(st==='down'?'↓':'→'));return acc;},[]).slice(-3);
 trendWrap.textContent=`Trend: ${outcomes.length?outcomes.join(' '):'ingen historik'}`;
 let goalRow=C('div');
-goalRow.className='template-row';
+goalRow.className='template-row goal-config-row';
 goalRow.style.margin='0.35rem 0 0';
+let goalTitle=C('span','card-subtitle goal-config-title');
+goalTitle.textContent='Progressionsmål';
+let minWrap=C('label','goal-input-wrap');
+let minLbl=C('span','card-subtitle');
+minLbl.textContent='Min reps';
 let minInp=C('input','exercise-progress-input');minInp.type='number';minInp.min='1';minInp.step='1';minInp.value=goal.repRangeMin;
+minWrap.append(minLbl,minInp);
+let maxWrap=C('label','goal-input-wrap');
+let maxLbl=C('span','card-subtitle');
+maxLbl.textContent='Max reps';
 let maxInp=C('input','exercise-progress-input');maxInp.type='number';maxInp.min='1';maxInp.step='1';maxInp.value=goal.repRangeMax;
+maxWrap.append(maxLbl,maxInp);
+let incWrap=C('label','goal-input-wrap');
+let incLbl=C('span','card-subtitle');
+incLbl.textContent='Øg kg med';
 let incInp=C('input','exercise-progress-input');incInp.type='number';incInp.min='0.5';incInp.step='0.5';incInp.value=goal.incrementKg;
+incWrap.append(incLbl,incInp);
+let metricWrap=C('label','goal-input-wrap');
+let metricLbl=C('span','card-subtitle');
+metricLbl.textContent='Mål måles på';
 let metricSel=C('select');
-['topSet','e1RM','volume'].forEach(v=>{let o=C('option');o.value=v;o.textContent=v;metricSel.appendChild(o);});
+[['topSet','Top set (kg × reps)'],['e1RM','Estimeret 1RM'],['volume','Samlet volumen (kg)']].forEach(([value,label])=>{let o=C('option');o.value=value;o.textContent=label;metricSel.appendChild(o);});
 metricSel.value=goal.primaryMetric;
+metricWrap.append(metricLbl,metricSel);
 let commitGoal=()=>{s.pg[key]=normalizeProgressionGoal({repRangeMin:parseInt(minInp.value,10),repRangeMax:parseInt(maxInp.value,10),incrementKg:parseFloat(incInp.value),primaryMetric:metricSel.value},ex);save();trendWrap.textContent=`Trend: ${outcomes.length?outcomes.join(' '):'ingen historik'}`;};
 [minInp,maxInp,incInp].forEach(inp=>inp.addEventListener('change',commitGoal));
 metricSel.addEventListener('change',commitGoal);
-goalRow.append(C('span','card-subtitle'),minInp,maxInp,incInp,metricSel);
-goalRow.firstChild.textContent='Mål';
+let goalHelp=C('span','card-subtitle goal-config-help');
+goalHelp.textContent='Regel: Når du rammer max reps, øges vægten med "Øg kg med".';
+goalRow.append(goalTitle,minWrap,maxWrap,incWrap,metricWrap,goalHelp);
 row.append(trendWrap,goalRow);
 ul.appendChild(row);
 });
@@ -410,7 +429,7 @@ p.appendChild(c);
 });
 setupDnD();
 }
-function rTem(){let m=$("template-manager");if(!m)return;m.innerHTML="";let c=C("div","card"),h=C("h2");h.textContent="Skabeloner";c.appendChild(h);let ul=C("ul","template-list");Object.keys(s.t).forEach(tn=>{let li=C("li","template-item"),sp=C("span");let exerciseCount=(s.t[tn]||[]).length;let usedCount=Object.values(s.a||{}).filter(v=>v===tn).length;sp.textContent=`${tn} · ${exerciseCount} øvelser${usedCount?` · bruges på ${usedCount} dag(e)`:''}`;li.appendChild(sp);let ed=C("button","icon-btn");ed.textContent="✎";ed.title="Rediger";ed.addEventListener("click",()=>{openTemplateModal('edit',tn);});li.appendChild(ed);let del=C("button","icon-btn");del.textContent="✕";del.title="Slet";del.addEventListener("click",()=>{showConfirm('Slet skabelon',`Slet '${tn}'?`,()=>{delete s.t[tn];for(let d in s.a)if(s.a[d]===tn)delete s.a[d];save();rTem();rPlan();});});li.appendChild(del);ul.appendChild(li);});c.appendChild(ul);let ab=C("button","primary-btn full-width");ab.textContent="Opret ny skabelon";ab.addEventListener("click",()=>{openTemplateModal('create',null);});c.appendChild(ab);m.appendChild(c);} 
+function rTem(){let m=$("template-manager");if(!m)return;m.innerHTML="";let c=C("div","card"),head=C("div","card-header"),title=C("h2"),toggle=C("button","icon-btn");title.textContent="Skabeloner";toggle.title="Fold ud/ind";let collapsed=!!(s.meta&&s.meta.ui&&s.meta.ui.templatesCollapsed);toggle.textContent=collapsed?"▼":"▲";head.append(title,toggle);c.appendChild(head);let body=C("div","card-body");body.classList.toggle("collapsed",collapsed);let ul=C("ul","template-list");Object.keys(s.t).forEach(tn=>{let li=C("li","template-item"),sp=C("span");let exerciseCount=(s.t[tn]||[]).length;let usedCount=Object.values(s.a||{}).filter(v=>v===tn).length;sp.textContent=`${tn} · ${exerciseCount} øvelser${usedCount?` · bruges på ${usedCount} dag(e)`:''}`;li.appendChild(sp);let ed=C("button","icon-btn");ed.textContent="✎";ed.title="Rediger";ed.addEventListener("click",()=>{openTemplateModal('edit',tn);});li.appendChild(ed);let del=C("button","icon-btn");del.textContent="✕";del.title="Slet";del.addEventListener("click",()=>{showConfirm('Slet skabelon',`Slet '${tn}'?`,()=>{delete s.t[tn];for(let d in s.a)if(s.a[d]===tn)delete s.a[d];save();rTem();rPlan();});});li.appendChild(del);ul.appendChild(li);});body.appendChild(ul);let ab=C("button","primary-btn full-width");ab.textContent="Opret ny skabelon";ab.addEventListener("click",()=>{openTemplateModal('create',null);});body.appendChild(ab);c.appendChild(body);head.addEventListener("click",(e)=>{if(e.target===toggle||e.target===head||e.target===title){collapsed=!collapsed;body.classList.toggle("collapsed",collapsed);toggle.textContent=collapsed?"▼":"▲";if(!s.meta||typeof s.meta!=="object")s.meta={};if(!s.meta.ui||typeof s.meta.ui!=="object")s.meta.ui={};s.meta.ui.templatesCollapsed=collapsed;save({sync:false});}});m.appendChild(c);} 
 function liMake(d,n,j){let li=C("li","exercise-item");li.draggable=true;li.dataset.index=j;li.dataset.dayName=d;let nm=exName(n);let sp=C("span","exercise-name");sp.textContent=nm;let ac=C("div","exercise-actions");let moveUp=C("button","icon-btn");moveUp.textContent="◀";moveUp.title="Flyt øvelse op";moveUp.addEventListener("click",()=>{moveExercise(d,j,-1);});let moveDown=C("button","icon-btn");moveDown.textContent="▶";moveDown.title="Flyt øvelse ned";moveDown.addEventListener("click",()=>{moveExercise(d,j,1);});let dh=C("button","icon-btn");dh.textContent="↕";dh.title="Træk";let db=C("button","icon-btn");db.textContent="✕";db.title="Slet";db.addEventListener("click",()=>{showConfirm('Slet øvelse',`Slet '${nm}'?`,()=>{del(d,j);rPlan();rToday();});});ac.append(moveUp,moveDown,dh,db);li.append(sp,ac);return li;} 
 let dragSrc=null;function setupDnD(){document.querySelectorAll(".exercise-item[draggable='true']").forEach(it=>{it.addEventListener("dragstart",hDS);it.addEventListener("dragend",hDE);});document.querySelectorAll(".exercise-list").forEach(l=>{l.addEventListener("dragover",hDO);l.addEventListener("drop",hDrop);});}
 function hDS(e){dragSrc=this;this.classList.add("dragging");e.dataTransfer.effectAllowed="move";}function hDE(){this.classList.remove("dragging");dragSrc=null;}function hDO(e){e.preventDefault();e.dataTransfer.dropEffect="move";const aft=getAfter(this,e.clientY);const dg=document.querySelector(".exercise-item.dragging");if(!dg)return;if(!aft)this.appendChild(dg);else this.insertBefore(dg,aft);}function hDrop(e){e.preventDefault();const d=this.dataset.dayName;if(!d)return;let arr=[];this.querySelectorAll(".exercise-item[draggable='true']").forEach(li=>{arr.push(s.w[d][parseInt(li.dataset.index,10)]);});s.w[d]=arr;save();rPlan();rToday();}

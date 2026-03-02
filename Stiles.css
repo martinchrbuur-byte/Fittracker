@@ -621,6 +621,35 @@ body {
   margin-bottom: 0.5rem;
 }
 
+.goal-config-row {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem;
+  background: var(--bg-elevated);
+}
+
+.goal-config-title {
+  width: 100%;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.15rem;
+}
+
+.goal-input-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.goal-input-wrap .card-subtitle {
+  margin-bottom: 0;
+}
+
+.goal-config-help {
+  width: 100%;
+  margin-top: 0.2rem;
+}
+
 .template-label {
   font-size: 0.8rem;
   color: #6b7280;
