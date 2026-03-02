@@ -405,6 +405,15 @@ function authStoreSession(session, userId) {
   if (userId) {
     localStorage.setItem(AUTH_STORAGE_KEYS.USER_ID, userId);
   }
+  authUpdateHeaderActions();
+}
+
+function authUpdateHeaderActions() {
+  const signupBtn = $('signup-btn');
+  const logoutBtn = $('logout-btn');
+  const isLoggedIn = authIsLoggedIn();
+  if (signupBtn) signupBtn.style.display = isLoggedIn ? 'none' : '';
+  if (logoutBtn) logoutBtn.style.display = isLoggedIn ? '' : 'none';
 }
 
 /* Check if user is authenticated */
@@ -442,6 +451,7 @@ async function authLogout() {
   localStorage.removeItem(AUTH_STORAGE_KEYS.USER_ID);
   localStorage.removeItem(AUTH_STORAGE_KEYS.USER_EMAIL);
   localStorage.removeItem(AUTH_STORAGE_KEYS.USER_PROFILE);
+  authUpdateHeaderActions();
 
   // Close any auth modals
   closeMod('login-modal');
@@ -698,11 +708,13 @@ async function authInit() {
     await authRefreshUserProfile();
     closeMod('login-modal');
     closeMod('signup-modal');
+    authUpdateHeaderActions();
     return true;
   } else {
     // User not logged in, show login modal
     createAuthModals();
     showAuthModal('login');
+    authUpdateHeaderActions();
     return false;
   }
 }
