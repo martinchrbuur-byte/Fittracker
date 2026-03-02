@@ -198,8 +198,13 @@ body {
 .today-header {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
-  margin-bottom: 0.9rem;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 0.55rem;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .today-workspace {
@@ -211,6 +216,11 @@ body {
 .today-info {
   flex: 1;
   text-align: center;
+}
+
+.today-header .nav-btn {
+  min-width: 96px;
+  padding: 0.55rem 0.65rem;
 }
 
 .today-label {
@@ -327,12 +337,47 @@ body {
   border-bottom: 1px dashed var(--border-subtle);
 }
 
+.set-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.35rem;
+}
+
 .set-row:last-of-type {
   border-bottom: none;
 }
 
 .set-row-label {
   min-width: 52px;
+}
+
+.set-secondary-actions {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+
+.set-more-btn {
+  margin-left: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  color: var(--text-muted);
+}
+
+.set-secondary-actions .compact-btn {
+  min-height: 36px;
+  padding: 0.35rem 0.55rem;
+  font-size: 0.85rem;
+}
+
+.set-secondary-actions .danger-btn {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.set-secondary-actions .danger-btn:active {
+  background: #fecaca;
 }
 
 .exercise-progress-input {
@@ -644,12 +689,14 @@ body {
   }
 
   .today-header {
-    flex-direction: column;
-    align-items: stretch;
+    align-items: center;
+    padding: 0.45rem;
   }
 
-  .nav-btn {
-    width: 100%;
+  .today-header .nav-btn {
+    min-width: 84px;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.88rem;
   }
 
   .card,
@@ -658,10 +705,19 @@ body {
   }
 
   .set-row {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 0.45rem;
     padding: 0.45rem 0;
+  }
+
+  .set-row-main {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.45rem;
+    align-items: stretch;
+  }
+
+  .set-row-label {
+    grid-column: 1 / -1;
+    margin-bottom: 0.1rem;
   }
 
   .metric-input-group,
@@ -671,6 +727,19 @@ body {
 
   .quick-adjust-group {
     justify-content: flex-start;
+  }
+
+  .warmup-label {
+    grid-column: 1 / -1;
+  }
+
+  .set-more-btn {
+    grid-column: 2;
+    justify-self: end;
+  }
+
+  .set-secondary-actions {
+    margin-top: 0.25rem;
   }
 
   .exercise-progress-controls {
@@ -685,6 +754,10 @@ body {
     min-width: 44px;
     padding-left: 0.45rem;
     padding-right: 0.45rem;
+  }
+
+  .info-chips .info-chip:nth-child(n+3) {
+    display: none;
   }
 
   .template-row {
