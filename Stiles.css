@@ -24,6 +24,7 @@
   --space-2: 0.5rem;
   --space-3: 0.75rem;
   --space-4: 1rem;
+  --header-offset: 64px;
 }
 
 body {
@@ -34,6 +35,10 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 .hidden {
@@ -91,7 +96,7 @@ body {
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface);
   position: sticky;
-  top: 64px;
+  top: var(--header-offset);
   z-index: 15;
 }
 
@@ -250,7 +255,7 @@ body {
 
 #mark-today {
   position: sticky;
-  bottom: 0.6rem;
+  bottom: calc(0.6rem + env(safe-area-inset-bottom));
   z-index: 5;
 }
 
@@ -696,12 +701,9 @@ body {
 
 /* Small screens */
 @media (max-width: 480px) {
-  .tabs {
-    top: 60px;
-  }
-
   .app-header {
     padding: 0.85rem 0.75rem;
+    padding-top: max(0.85rem, env(safe-area-inset-top));
   }
 
   .app-header h1 {
