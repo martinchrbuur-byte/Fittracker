@@ -57,6 +57,7 @@ body.modal-open {
   position: sticky;
   top: 0;
   z-index: 20;
+  transition: transform 0.2s ease;
 }
 
 .app-header h1 {
@@ -98,6 +99,15 @@ body.modal-open {
   position: sticky;
   top: var(--header-offset);
   z-index: 15;
+  transition: top 0.2s ease;
+}
+
+body.topbar-hidden .app-header {
+  transform: translateY(-100%);
+}
+
+body.topbar-hidden .tabs {
+  top: 0;
 }
 
 .tab-button {
