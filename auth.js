@@ -4,6 +4,7 @@
 const AUTH_CONFIG = {
   SUPABASE_URL: 'https://mgmizuxlyttoitufmieb.supabase.co', // Set to your Supabase Project URL (e.g., https://xxxxx.supabase.co)
   SUPABASE_ANON_KEY: 'sb_publishable_nQylUGRMdFyPoQG2fi__WQ_1Y-fXIsZ', // Set to your Supabase Anon Key
+  ALLOW_LOCAL_DEV_AUTH_BYPASS: false,
 };
 
 const AUTH_STORAGE_KEYS = {
@@ -14,12 +15,51 @@ const AUTH_STORAGE_KEYS = {
   USER_PROFILE: 'auth_user_profile',
 };
 
-const AUTH_ADMIN_EMAIL = 'martin.chr.buur@gmail.com';
+function authGetAccessToken() {
+  const sessionToken = sessionStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  if (sessionToken) return sessionToken;
+
+  const legacyToken = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  if (legacyToken) {
+    try {
+      sessionStorage.setItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN, legacyToken);
+      localStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+    } catch {}
+    return legacyToken;
+  }
+
+  return null;
+}
+
+function authSetAccessToken(token) {
+  if (!token) return;
+  try {
+    sessionStorage.setItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN, token);
+    localStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  } catch {
+    localStorage.setItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN, token);
+  }
+}
+
+function authGetRefreshToken() {
+  return localStorage.getItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN);
+}
+
+function authSetRefreshToken(token) {
+  if (!token) return;
+  localStorage.setItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN, token);
+}
+
+function authClearSessionStorage() {
+  sessionStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  localStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+}
 
 function authIsLocalDevBypassEnabled() {
   try {
     const host = window.location && window.location.hostname;
-    return host === '127.0.0.1' || host === 'localhost';
+    const isLocalHost = host === '127.0.0.1' || host === 'localhost';
+    return AUTH_CONFIG.ALLOW_LOCAL_DEV_AUTH_BYPASS === true && isLocalHost;
   } catch {
     return false;
   }
@@ -27,7 +67,7 @@ function authIsLocalDevBypassEnabled() {
 
 /* Utility: Make authenticated API calls */
 async function authFetch(endpoint, options = {}) {
-  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  const token = authGetAccessToken();
   const headers = {
     'Content-Type': 'application/json',
     apikey: AUTH_CONFIG.SUPABASE_ANON_KEY,
@@ -157,7 +197,7 @@ function authGetUserProfile() {
 function authGetUserEmail() {
   const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER_EMAIL);
   if (stored && stored.trim()) return stored.trim();
-  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  const token = authGetAccessToken();
   const claims = authDecodeClaimsFromJWT(token);
   const email = claims && typeof claims.email === 'string' ? claims.email.trim() : '';
   if (email) {
@@ -169,13 +209,6 @@ function authGetUserEmail() {
 }
 
 function authIsAdminAuthorized() {
-  const email = (authGetUserEmail() || '').trim().toLowerCase();
-  if (!email) return false;
-
-  if (email === AUTH_ADMIN_EMAIL) {
-    return true;
-  }
-
   const profile = authGetStoredUserProfile();
   if (!profile) return false;
   const roles = authExtractRoles(profile);
@@ -324,7 +357,7 @@ async function authSignin(email, password) {
 
 /* Refresh Access Token */
 async function refreshAuthToken() {
-  const refreshToken = localStorage.getItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN);
+  const refreshToken = authGetRefreshToken();
   if (!refreshToken) return false;
 
   try {
@@ -364,10 +397,10 @@ async function refreshAuthToken() {
 /* Store session tokens */
 function authStoreSession(session, userId) {
   if (session && session.access_token) {
-    localStorage.setItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN, session.access_token);
+    authSetAccessToken(session.access_token);
   }
   if (session && session.refresh_token) {
-    localStorage.setItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN, session.refresh_token);
+    authSetRefreshToken(session.refresh_token);
   }
   if (userId) {
     localStorage.setItem(AUTH_STORAGE_KEYS.USER_ID, userId);
@@ -376,7 +409,7 @@ function authStoreSession(session, userId) {
 
 /* Check if user is authenticated */
 function authIsLoggedIn() {
-  return !!localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  return !!authGetAccessToken() || !!authGetRefreshToken();
 }
 
 /* Get current user ID */
@@ -384,7 +417,7 @@ function authGetUserId() {
   const stored = localStorage.getItem(AUTH_STORAGE_KEYS.USER_ID);
   if (stored) return stored;
 
-  const token = localStorage.getItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  const token = authGetAccessToken();
   const decoded = authDecodeUserIdFromJWT(token);
   if (decoded) {
     localStorage.setItem(AUTH_STORAGE_KEYS.USER_ID, decoded);
@@ -404,7 +437,7 @@ async function authLogout() {
   }
 
   // Clear local tokens
-  localStorage.removeItem(AUTH_STORAGE_KEYS.ACCESS_TOKEN);
+  authClearSessionStorage();
   localStorage.removeItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN);
   localStorage.removeItem(AUTH_STORAGE_KEYS.USER_ID);
   localStorage.removeItem(AUTH_STORAGE_KEYS.USER_EMAIL);
@@ -656,7 +689,7 @@ async function authInit() {
   }
 
   // Try to refresh token on page load
-  if (localStorage.getItem(AUTH_STORAGE_KEYS.REFRESH_TOKEN)) {
+  if (authGetRefreshToken()) {
     await refreshAuthToken();
   }
 

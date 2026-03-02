@@ -7,8 +7,16 @@ function createWindow() {
     height: 800,
     webPreferences: {
       contextIsolation: true,
+      sandbox: true,
       // We don't need Node integration for this app; it's pure frontend
       nodeIntegration: false,
+    }
+  });
+
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  win.webContents.on('will-navigate', (event, url) => {
+    if (!url.startsWith('file://')) {
+      event.preventDefault();
     }
   });
 

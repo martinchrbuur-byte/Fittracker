@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; connect-src 'self' https://*.supabase.co https://www.exercisedb.dev; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" />
   <title>PPL AB Planner</title>
   <link rel="stylesheet" href="Stiles.css" />
 </head>
@@ -115,14 +116,7 @@
 
   <script src="auth.js"></script>
   <script src="sync.js"></script>
-  <script>
-    window.__APP_CONFIG = Object.assign({}, window.__APP_CONFIG || {}, {
-      SUPABASE_URL: 'https://mgmizuxlyttoitufmieb.supabase.co',
-      EXERCISEDB_PROXY_BASE: 'https://mgmizuxlyttoitufmieb.supabase.co/functions/v1/exercisedb-proxy',
-      EXERCISEDB_FORCE_PROXY: false,
-      EXERCISEDB_DISABLE_PROXY: true,
-    });
-  </script>
+  <script src="app-config.js"></script>
   <script src="exercise-catalog.js"></script>
   <script src="app.js"></script>
 </body>

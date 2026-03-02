@@ -10,12 +10,14 @@
     "deploy:preflight": "node scripts/deploy-preflight.mjs",
     "deploy:prepare": "npm run deploy:preflight && npm run build:pages",
     "deploy:push": "node scripts/deploy-push.mjs",
-    "deploy": "npm run deploy:prepare && npm run deploy:push"
+    "deploy": "npm run deploy:prepare && npm run deploy:push",
+    "rollback:security:preview": "node scripts/rollback-security.mjs preview",
+    "rollback:security": "node scripts/rollback-security.mjs"
   },
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^26.2.0",
+    "electron": "^40.6.1",
     "electron-packager": "^16.0.0"
   }
 }

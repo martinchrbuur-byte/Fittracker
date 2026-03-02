@@ -4,7 +4,47 @@ const SYNC_CONFIG = {
   DEBOUNCE_MS: 2000, // Wait 2 seconds after last change before syncing
   MAX_RETRIES: 3,
   RETRY_DELAY_MS: 1000,
+  MAX_QUEUE_ENTRIES: 25,
+  MAX_IMPORT_FILE_BYTES: 1024 * 1024,
 };
+
+const SYNC_ALLOWED_STATE_KEYS = new Set([
+  'split',
+  'w',
+  'n',
+  'last',
+  'ci',
+  'cd',
+  'wd',
+  't',
+  'a',
+  'pg',
+  'meta',
+]);
+
+function syncValidateImportStateShape(state) {
+  if (!state || typeof state !== 'object' || Array.isArray(state)) {
+    return { ok: false, reason: 'State mangler eller er ugyldig' };
+  }
+
+  const keys = Object.keys(state);
+  const unknownKeys = keys.filter((key) => !SYNC_ALLOWED_STATE_KEYS.has(key));
+  if (unknownKeys.length) {
+    return { ok: false, reason: `Ukendte felter i state: ${unknownKeys.join(', ')}` };
+  }
+
+  if (!Array.isArray(state.split)) return { ok: false, reason: 'split skal være en liste' };
+  if (!state.w || typeof state.w !== 'object') return { ok: false, reason: 'w skal være et objekt' };
+  if (!state.n || typeof state.n !== 'object') return { ok: false, reason: 'n skal være et objekt' };
+  if (!state.cd || typeof state.cd !== 'object') return { ok: false, reason: 'cd skal være et objekt' };
+  if (!state.wd || typeof state.wd !== 'object') return { ok: false, reason: 'wd skal være et objekt' };
+  if (!state.t || typeof state.t !== 'object') return { ok: false, reason: 't skal være et objekt' };
+  if (!state.a || typeof state.a !== 'object') return { ok: false, reason: 'a skal være et objekt' };
+  if (!state.pg || typeof state.pg !== 'object') return { ok: false, reason: 'pg skal være et objekt' };
+  if (!state.meta || typeof state.meta !== 'object') return { ok: false, reason: 'meta skal være et objekt' };
+
+  return { ok: true };
+}
 
 let syncTimeout = null;
 let syncInProgress = false;
@@ -37,7 +77,9 @@ function syncGetCurrentUserId() {
   let userId = typeof authGetUserId === 'function' ? authGetUserId() : null;
   if (userId) return userId;
 
-  const token = localStorage.getItem('auth_access_token');
+  const token = typeof authGetAccessToken === 'function'
+    ? authGetAccessToken()
+    : localStorage.getItem('auth_access_token');
   if (!token || typeof authDecodeUserIdFromJWT !== 'function') return null;
 
   userId = authDecodeUserIdFromJWT(token);
@@ -116,7 +158,7 @@ async function syncFetchState() {
     syncSetDebugStatus('fetching', 'Henter state fra backend');
     // Get user's row from user_states table
     const res = await authFetch(
-      `/rest/v1/user_states?select=state&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
+      `/rest/v1/user_states?select=user_id,state&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
       { method: 'GET' }
     );
 
@@ -127,6 +169,14 @@ async function syncFetchState() {
     }
 
     const rows = await res.json();
+    if (rows && rows[0]) {
+      if (rows[0].user_id && rows[0].user_id !== userId) {
+        console.error('Sync security check failed: fetched row user_id mismatch');
+        syncSetDebugStatus('security_error', 'Backend user_id mismatch (check RLS)');
+        return null;
+      }
+    }
+
     if (rows && rows[0] && rows[0].state) {
       // Cache in localStorage
       localStorage.setItem('_sync_cache', JSON.stringify(rows[0].state));
@@ -182,6 +232,15 @@ async function syncSaveState(state, retryCount = 0, token = 0) {
     );
 
     if (res.ok) {
+      try {
+        const payload = await res.json();
+        const first = Array.isArray(payload) ? payload[0] : null;
+        if (first && first.user_id && first.user_id !== userId) {
+          throw new Error('Backend user_id mismatch (check RLS)');
+        }
+      } catch (verifyErr) {
+        throw verifyErr;
+      }
       syncInProgress = false;
       showSyncToast('Gemt', 'success');
       syncSetDebugStatus('saved', 'Backend sync lykkedes');
@@ -266,10 +325,14 @@ function syncStateDebounced(state) {
 async function syncQueueOfflineChange(state) {
   try {
     let queue = JSON.parse(localStorage.getItem('_sync_queue') || '[]');
+    if (!Array.isArray(queue)) queue = [];
     queue.push({
       state: state,
       timestamp: Date.now(),
     });
+    if (queue.length > SYNC_CONFIG.MAX_QUEUE_ENTRIES) {
+      queue = queue.slice(queue.length - SYNC_CONFIG.MAX_QUEUE_ENTRIES);
+    }
     localStorage.setItem('_sync_queue', JSON.stringify(queue));
   } catch (err) {
     console.error('Queue offline change error:', err);
@@ -339,6 +402,18 @@ async function syncExportState(state) {
 /* Import state from file (validate and sync to backend) */
 async function syncImportState(file) {
   return new Promise((resolve) => {
+    if (!file) {
+      showSyncToast('Ingen fil valgt', 'error');
+      resolve(false);
+      return;
+    }
+
+    if (file.size > SYNC_CONFIG.MAX_IMPORT_FILE_BYTES) {
+      showSyncToast('Backup-fil er for stor (maks 1MB)', 'error');
+      resolve(false);
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
@@ -347,6 +422,13 @@ async function syncImportState(file) {
         // Validate it's a state object
         if (!data.state || typeof data.state !== 'object') {
           showSyncToast('Invalid backup file', 'error');
+          resolve(false);
+          return;
+        }
+
+        const validation = syncValidateImportStateShape(data.state);
+        if (!validation.ok) {
+          showSyncToast(`Backup afvist: ${validation.reason}`, 'error');
           resolve(false);
           return;
         }
