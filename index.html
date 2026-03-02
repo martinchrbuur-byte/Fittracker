@@ -20,12 +20,12 @@
     <button class="tab-button active" data-tab="today">I dag</button>
     <button class="tab-button" data-tab="plan">Plan</button>
     <button class="tab-button" data-tab="calendar">Kalender</button>
-    <button id="admin-tab-btn" class="tab-button" data-tab="admin" style="display:none">Admin</button>
+    <button id="admin-tab-btn" class="tab-button hidden" data-tab="admin">Admin</button>
   </nav>
 
-  <main>
+  <main class="app-main">
     <!-- I dag -->
-    <section id="tab-today" class="tab-content active">
+    <section id="tab-today" class="tab-content active tab-today">
       <div class="today-header">
         <button id="prev-day" class="nav-btn">◀ Forrige</button>
         <div class="today-info">
@@ -37,20 +37,22 @@
         <button id="next-day" class="nav-btn">Næste ▶</button>
       </div>
 
-      <ul id="today-exercise-list" class="exercise-list"></ul>
+      <div class="today-workspace">
+        <ul id="today-exercise-list" class="exercise-list"></ul>
 
-      <button id="today-add-exercise" class="secondary-btn full-width">
-        ➕ Tilføj øvelse til i dag
-      </button>
+        <button id="today-add-exercise" class="secondary-btn full-width">
+          ➕ Tilføj øvelse til i dag
+        </button>
 
-      <button id="mark-today" class="primary-btn full-width">
-        Markér dagens pas som gennemført
-      </button>
+        <button id="mark-today" class="primary-btn full-width">
+          Markér dagens pas som gennemført
+        </button>
+      </div>
     </section>
 
     <!-- Plan -->
-    <section id="tab-plan" class="tab-content">
-      <p class="card-subtitle" style="margin-bottom:0.5rem;">
+    <section id="tab-plan" class="tab-content tab-plan">
+      <p class="card-subtitle plan-intro">
         Tryk ✎ for at omdøbe en dag, og brug pilene for at ændre rækkefølgen af dine splits. 
         Du kan også administrere skabeloner nedenfor og anvende dem på en dag.
       </p>
@@ -59,14 +61,14 @@
     </section>
 
     <!-- Calendar / History -->
-    <section id="tab-calendar" class="tab-content">
+    <section id="tab-calendar" class="tab-content tab-calendar">
       <div class="card">
         <div class="calendar-header">
           <button id="calendar-prev" class="icon-btn">◀</button>
           <div id="calendar-month-label" class="card-title"></div>
           <button id="calendar-next" class="icon-btn">▶</button>
         </div>
-        <div id="calendar-weekly-summary" class="card-subtitle" style="margin-top:0.4rem;"></div>
+        <div id="calendar-weekly-summary" class="card-subtitle calendar-summary"></div>
         <div id="calendar-grid" class="calendar-grid"></div>
       </div>
 
@@ -78,34 +80,34 @@
           <h3 id="modal-day-title"></h3>
           <div id="modal-day-meta" class="card-subtitle"></div>
           <ul id="modal-exercise-list" class="exercise-list"></ul>
-          <div id="modal-notes" class="card-subtitle" style="margin-top:0.5rem; white-space:pre-wrap"></div>
-          <div id="modal-day-actions" class="template-row" style="margin-top:0.6rem"></div>
+          <div id="modal-notes" class="card-subtitle modal-notes"></div>
+          <div id="modal-day-actions" class="template-row modal-day-actions"></div>
         </div>
       </div>
     </section>
 
     <!-- Admin -->
-    <section id="tab-admin" class="tab-content">
-      <div class="card">
+    <section id="tab-admin" class="tab-content tab-admin">
+      <div class="card admin-card">
         <h2>Admin</h2>
-        <p class="card-subtitle" style="margin-top:0.35rem;">
+        <p class="card-subtitle admin-intro">
           Sync-diagnostik og driftshandlinger for administrator.
         </p>
         <div id="admin-auth-status" class="card-subtitle"></div>
         <div id="admin-sync-status" class="card-subtitle"></div>
         <div id="admin-queue-status" class="card-subtitle"></div>
-        <div id="admin-users-status" class="card-subtitle" style="margin-top:0.4rem"></div>
-        <ul id="admin-users-list" class="exercise-list" style="margin-top:0.35rem; max-height:220px; overflow:auto"></ul>
-        <div class="template-row" style="margin-top:0.5rem;">
+        <div id="admin-users-status" class="card-subtitle admin-users-status"></div>
+        <ul id="admin-users-list" class="exercise-list admin-users-list"></ul>
+        <div class="template-row admin-actions-row">
           <button id="admin-refresh" class="secondary-btn">Opdatér status</button>
           <button id="admin-process-queue" class="primary-btn">Kør offline-kø</button>
           <button id="admin-clear-queue" class="danger-btn">Ryd offline-kø</button>
         </div>
-        <div class="template-row" style="margin-top:0.5rem;">
+        <div class="template-row admin-actions-row">
           <button id="admin-force-sync" class="primary-btn">Tving sync nu</button>
           <button id="admin-export" class="secondary-btn">Eksportér backup</button>
           <button id="admin-import-btn" class="secondary-btn">Importér backup</button>
-          <input id="admin-import-file" type="file" accept="application/json" style="display:none" />
+          <input id="admin-import-file" type="file" accept="application/json" class="hidden" />
         </div>
       </div>
     </section>

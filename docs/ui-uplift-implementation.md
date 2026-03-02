@@ -1,5 +1,39 @@
 # UI Uplift Implementation – Phase 3
 
+## 2026-03 Major UI Overhaul (All Phases)
+
+The app received a broader phone-first overhaul across structure, styling, logging UX, and interaction performance.
+
+### Phase 1 – Design Foundation
+- Introduced design-token based styling in [Stiles.css](../Stiles.css) (`:root` tokens for color, spacing, radius, shadows).
+- Added utility classes (`.hidden`, focus-visible styles) and aligned surfaces/cards with a consistent visual system.
+- Removed multiple inline styles from [index.html](../index.html) and replaced them with reusable classes.
+
+### Phase 2 – Information Architecture Cleanup
+- Added semantic tab section classes (`tab-today`, `tab-plan`, `tab-calendar`, `tab-admin`) and clearer page hooks.
+- Grouped Today actions in a dedicated `today-workspace` container to improve hierarchy and spacing.
+- Added explicit admin/layout helper classes for status/action rows and modal day actions.
+
+### Phase 3 – Phone Logging Redesign
+- Refined set row semantics in [app.js](../app.js) (`set-row`, `set-row-label`) for better mobile layout control.
+- Added faster inline quick-adjust controls for reps/kilos and improved mobile keyboard hints.
+- Improved default expansion behavior for Today exercises (first actionable exercise opens by default when no saved preference).
+
+### Phase 4 – Interaction & Performance
+- Added debounced progress persistence in [app.js](../app.js) (`scheduleProgressSave`, `flushProgressSave`) to reduce save churn during rapid input.
+- Completion actions now flush pending progress saves before marking/unmarking to avoid stale snapshots.
+- Maintained existing state model and sync contract (no migration required).
+
+### Phase 5 – Accessibility & UX Polish
+- Added `:focus-visible` outlines for keyboard/touch accessibility.
+- Increased/standardized touch-friendly controls and improved small-screen spacing behavior.
+- Added class-based modal notes/actions styling to improve consistency and readability.
+
+### Result
+- Cleaner structure for future UI iteration.
+- Faster phone logging flow with less interaction friction.
+- Reduced persistence noise while preserving data integrity and sync behavior.
+
 ## Overview
 This document describes the four UI improvements implemented in the PPL Planner to replace native browser dialogs and inline inputs with custom modal windows.
 
