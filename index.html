@@ -22,6 +22,7 @@
     <button class="tab-button active" data-tab="today">I dag</button>
     <button class="tab-button" data-tab="plan">Plan</button>
     <button class="tab-button" data-tab="calendar">Kalender</button>
+    <button class="tab-button" data-tab="statistik">Statistik</button>
     <button id="admin-tab-btn" class="tab-button hidden" data-tab="admin">Admin</button>
   </nav>
 
@@ -85,6 +86,58 @@
           <div id="modal-notes" class="card-subtitle modal-notes"></div>
           <div id="modal-day-actions" class="template-row modal-day-actions"></div>
         </div>
+      </div>
+    </section>
+
+    <!-- Statistik -->
+    <section id="tab-statistik" class="tab-content tab-statistik">
+      <div class="card">
+        <div class="stats-filter-row">
+          <label class="stats-filter-item">
+            <span class="card-subtitle">Periode</span>
+            <select id="stats-period-select">
+              <option value="week">Uge</option>
+              <option value="month" selected>Måned</option>
+              <option value="year">År</option>
+            </select>
+          </label>
+          <label class="stats-filter-item">
+            <span class="card-subtitle">Øvelse</span>
+            <select id="stats-exercise-select"></select>
+          </label>
+        </div>
+      </div>
+
+      <div id="stats-kpis" class="stats-kpi-grid"></div>
+
+      <div class="card">
+        <h3 class="card-title">Volumen trend</h3>
+        <div id="stats-volume-chart" class="stats-chart"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Frekvens</h3>
+        <div id="stats-frequency-chart" class="stats-chart"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Øvelse progression</h3>
+        <div id="stats-progression-chart" class="stats-chart"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Muskelgruppe-fordeling</h3>
+        <div id="stats-muscle-chart" class="stats-bars"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Seneste PR</h3>
+        <div id="stats-pr-list" class="stats-list"></div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">Top øvelser (volumen)</h3>
+        <div id="stats-top-list" class="stats-list"></div>
       </div>
     </section>
 
