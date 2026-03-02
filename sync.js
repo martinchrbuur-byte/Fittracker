@@ -8,6 +8,17 @@ const SYNC_CONFIG = {
 
 let syncTimeout = null;
 let syncInProgress = false;
+let latestPendingState = null;
+let latestPendingToken = 0;
+let activeSyncToken = 0;
+
+function syncCloneState(state) {
+  try {
+    return JSON.parse(JSON.stringify(state));
+  } catch {
+    return state;
+  }
+}
 
 function syncSetDebugStatus(status, message) {
   const payload = {
@@ -133,10 +144,15 @@ async function syncFetchState() {
 }
 
 /* Save state to backend (with retry logic) */
-async function syncSaveState(state, retryCount = 0) {
+async function syncSaveState(state, retryCount = 0, token = 0) {
   if (!authIsLoggedIn()) {
     showSyncToast('Ikke logget ind - kan ikke gemme', 'error');
     syncSetDebugStatus('skipped', 'Ikke logget ind');
+    return false;
+  }
+
+  if (token && token !== activeSyncToken) {
+    syncSetDebugStatus('stale_skipped', 'Ignorerer forældet save-forsøg');
     return false;
   }
 
@@ -182,7 +198,12 @@ async function syncSaveState(state, retryCount = 0) {
       syncSetDebugStatus('retrying', `Retry ${retryCount + 1}/${SYNC_CONFIG.MAX_RETRIES}`);
       // Retry with exponential backoff
       await new Promise(resolve => setTimeout(resolve, SYNC_CONFIG.RETRY_DELAY_MS * (retryCount + 1)));
-      return syncSaveState(state, retryCount + 1);
+      if (token && token !== activeSyncToken) {
+        syncInProgress = false;
+        syncSetDebugStatus('stale_skipped', 'Forældet retry droppet');
+        return false;
+      }
+      return syncSaveState(state, retryCount + 1, token);
     } else {
       syncInProgress = false;
       showSyncToast('Kunne ikke gemme - prøver igen senere', 'error');
@@ -194,8 +215,37 @@ async function syncSaveState(state, retryCount = 0) {
   }
 }
 
+async function syncFlushPending() {
+  if (syncInProgress) return;
+  if (!latestPendingState) return;
+
+  const token = latestPendingToken;
+  const stateToSave = latestPendingState;
+  activeSyncToken = token;
+
+  const success = await syncSaveState(stateToSave, 0, token);
+
+  if (token === latestPendingToken) {
+    latestPendingState = null;
+  }
+
+  if (latestPendingState && activeSyncToken !== latestPendingToken) {
+    activeSyncToken = latestPendingToken;
+  }
+
+  if (latestPendingState && success !== null) {
+    setTimeout(() => {
+      syncFlushPending();
+    }, 0);
+  }
+}
+
 /* Debounced save (only sync after 2 seconds of inactivity) */
 function syncStateDebounced(state) {
+  latestPendingState = syncCloneState(state);
+  latestPendingToken += 1;
+  const token = latestPendingToken;
+
   if (syncTimeout) {
     clearTimeout(syncTimeout);
   }
@@ -204,7 +254,11 @@ function syncStateDebounced(state) {
   syncSetDebugStatus('pending', `Debounce ${SYNC_CONFIG.DEBOUNCE_MS}ms`);
 
   syncTimeout = setTimeout(() => {
-    syncSaveState(state);
+    if (token !== latestPendingToken) {
+      syncSetDebugStatus('stale_skipped', 'Debounced save erstattet af nyere state');
+      return;
+    }
+    syncFlushPending();
   }, SYNC_CONFIG.DEBOUNCE_MS);
 }
 
