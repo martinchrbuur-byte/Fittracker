@@ -5,15 +5,22 @@
   padding: 0;
 }
 
+input:hover,
+textarea:hover,
+select:hover {
+  border-color: #93c5fd;
+}
+
 :root {
-  --bg-app: #f3f5f8;
+  --bg-app: #eef3f8;
   --bg-surface: #ffffff;
-  --bg-elevated: #f8fafc;
+  --bg-elevated: #f6f9fc;
   --text-primary: #0f172a;
   --text-muted: #64748b;
   --border-subtle: #e2e8f0;
   --accent: #2563eb;
   --accent-strong: #1d4ed8;
+  --accent-soft: #dbeafe;
   --success: #16a34a;
   --danger: #dc2626;
   --radius-sm: 0.5rem;
@@ -29,7 +36,9 @@
 
 body {
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: var(--bg-app);
+  background:
+    radial-gradient(circle at 100% 0, rgba(191, 219, 254, 0.38), transparent 30rem),
+    var(--bg-app);
   color: var(--text-primary);
   line-height: 1.4;
   min-height: 100vh;
@@ -47,8 +56,8 @@ body.modal-open {
 
 /* Layout */
 .app-header {
-  padding: var(--space-4);
-  background: #0b1220;
+  padding: 0.85rem var(--space-4);
+  background: linear-gradient(115deg, #0b1220, #172554);
   color: #f9fafb;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -62,6 +71,7 @@ body.modal-open {
 .app-header h1 {
   font-size: 1.4rem;
   line-height: 1.2;
+  letter-spacing: -0.025em;
   justify-self: center;
   text-align: center;
 }
@@ -101,6 +111,7 @@ body.modal-open {
   display: flex;
   border-bottom: 1px solid var(--border-subtle);
   background: var(--bg-surface);
+  box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06);
   position: sticky;
   top: var(--header-offset);
   z-index: 15;
@@ -125,17 +136,24 @@ body.topbar-hidden .tabs {
   font-weight: 600;
   color: var(--text-muted);
   cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.tab-button:hover {
+  color: var(--accent-strong);
+  background: var(--bg-elevated);
 }
 
 .tab-button.active {
   color: var(--text-primary);
   border-bottom: 3px solid var(--accent);
+  background: linear-gradient(180deg, transparent, rgba(219, 234, 254, 0.55));
 }
 
 .app-main {
   flex: 1;
-  padding: 0.95rem 0.75rem 1.25rem;
-  max-width: 700px;
+  padding: 1.15rem 0.85rem 1.5rem;
+  max-width: 760px;
   width: 100%;
   margin: 0 auto;
 }
@@ -280,6 +298,11 @@ body.topbar-hidden .tabs {
   color: #f9fafb;
 }
 
+.primary-btn:hover {
+  background: var(--accent-strong);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.22);
+}
+
 .primary-btn:active {
   background: var(--accent-strong);
 }
@@ -287,6 +310,12 @@ body.topbar-hidden .tabs {
 .nav-btn {
   background: #e5e7eb;
   color: #111827;
+}
+
+.nav-btn:hover,
+.secondary-btn:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
 }
 
 .nav-btn:active {
@@ -327,6 +356,12 @@ body.topbar-hidden .tabs {
   border-radius: var(--radius-lg);
   padding: 0.55rem;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.exercise-item:hover {
+  border-color: #bfdbfe;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.07);
 }
 
 .today-workspace {
@@ -645,6 +680,11 @@ body.topbar-hidden .tabs {
   padding: 0.9rem;
   border: 1px solid var(--border-subtle);
   box-shadow: var(--shadow-soft);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.1);
 }
 
 .card-header {
